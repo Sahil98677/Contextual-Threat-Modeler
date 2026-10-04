@@ -1,0 +1,14 @@
+[
+  {
+    "path": "/document/upload",
+    "security_policy": "weak"
+  },
+  {
+    "path": "/user/profile",
+    "security_policy": "strong"
+  },
+  {
+    "path": "/api/v1/search_items",
+    "security_policy": "unknown"
+  }
+]

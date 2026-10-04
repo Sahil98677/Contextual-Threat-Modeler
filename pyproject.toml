@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "contextual-threat-modeler"
-version = "1.0.0"
+version = "1.1.0"
 description = "Context-aware security decision engine for threat modeling, risk scoring, attack paths, and prioritization."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -17,6 +17,19 @@ dev = ["pytest>=8.0"]
 
 [project.scripts]
 ctm = "ctm_cli:main"
+
+[tool.setuptools]
+packages = [
+    "adapters",
+    "ctm",
+    "ctm.context",
+    "ctm.threat",
+    "ctm.scoring",
+    "ctm.decision",
+    "ctm.reporting",
+]
+
+py-modules = ["ctm_cli"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

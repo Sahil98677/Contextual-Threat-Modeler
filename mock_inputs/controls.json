@@ -1,0 +1,23 @@
+[
+  {
+    "path": "/document/upload",
+    "waf": true,
+    "file_validation": false,
+    "av_scanning": false,
+    "mfa": false
+  },
+  {
+    "path": "/user/profile",
+    "waf": true,
+    "file_validation": true,
+    "av_scanning": true,
+    "mfa": true
+  },
+  {
+    "path": "/api/v1/search_items",
+    "waf": false,
+    "file_validation": false,
+    "av_scanning": false,
+    "mfa": false
+  }
+]

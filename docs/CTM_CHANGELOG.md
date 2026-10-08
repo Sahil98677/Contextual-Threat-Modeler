@@ -2,9 +2,28 @@
 
 This file records meaningful architecture and implementation updates so project documentation can be reconstructed from the repository itself.
 
-## Phase 3 — Scanner Validation and Reporting
+## Phase 3.1 — End-to-End Scanner Validation
 
 Status: Prepared for upload
+
+### Purpose
+Strengthen Phase 3 by testing all synthetic scanner fixtures through the complete scanner-to-CTM pipeline.
+
+### Added
+- End-to-end regression tests for Nuclei, Trivy, Nessus, and Qualys CSV
+- Scanner-specific metadata preservation checks
+- Risk, confidence, decision, STRIDE, MITRE, and attack-path assertions
+- Empty-export regression tests for all four scanner formats
+- README scanner-pipeline documentation updates
+
+### Validation boundary
+Tests verify parsing, normalization, contextual enrichment, scoring, decisions, and attack-path generation. They do not claim synthetic findings are exploitable in real environments.
+
+---
+
+## Phase 3 — Scanner Validation and Reporting
+
+Status: Uploaded
 
 ### Purpose
 Validate the complete scanner-to-CTM path using safe synthetic exports and add a compact reporting summary.

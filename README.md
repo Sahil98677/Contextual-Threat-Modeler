@@ -4,7 +4,7 @@
 
 CTM does not replace vulnerability scanners.
 
-Instead, it consumes their results, adds business and security context, maps threats and attack techniques, calculates contextual risk, analyzes attack paths, and determines what should be investigated or tested first.
+Instead, it consumes their results, adds business and security context, maps threats and attack techniques, calculates contextual risk, analyzes candidate attack paths, and determines what should be investigated or tested first.
 
 ---
 
@@ -17,8 +17,6 @@ Traditional scanners tell you:
 CTM asks:
 
 > "How dangerous is this vulnerability in this environment, how confident are we, what security controls exist, and what should we do about it?"
-
-Example:
 
 ```text
 Scanner Finding
@@ -55,9 +53,10 @@ Security Decision
 - Security-control adjustment
 - Confidence scoring
 - Risk prioritization
-- Attack-path generation
+- Conservative attack-path correlation
 - Automated security decisions
-- Reporting support
+- Console, JSON, and HTML reporting
+- Historical risk snapshots and posture trends
 - Regression and end-to-end testing
 
 ---
@@ -108,7 +107,10 @@ Security Decision
                    Decision Engine
                            │
                            ▼
-                   Attack Paths
+                Candidate Attack Paths
+                           │
+                           ▼
+                Historical Risk Trend
                            │
                            ▼
                       Reporting
@@ -151,8 +153,6 @@ Contextual factors include:
 
 ## Supported Scanner Adapters
 
-CTM currently supports:
-
 | Scanner | Export | Adapter |
 |---|---|---|
 | Generic JSON | JSON | `generic-json` |
@@ -163,99 +163,40 @@ CTM currently supports:
 | Qualys | CSV | `qualys-csv` |
 | Nessus | `.nessus` XML | `nessus` |
 
-### Scanner Integration Flow
-
-```text
-Scanner Export
-      ↓
-Adapter
-      ↓
-Normalized Record
-      ↓
-CTM Finding
-      ↓
-Context Enrichment
-      ↓
-Risk + Threat Analysis
-      ↓
-Security Decision
-```
-
-CTM consumes scanner output.
-
-It does **not** launch scanners or automatically exploit targets.
+CTM consumes scanner output. It does **not** launch scanners or automatically exploit targets.
 
 ---
 
-## Example
+## CLI
 
-A scanner may report:
+Run the built-in CTM workflow:
 
-```text
-Critical API vulnerability
+```bash
+ctm
 ```
 
-CTM can combine that finding with:
+Analyze an existing scanner export:
 
-```text
-Internet-facing       → Yes
-Authentication        → Not required
-Asset criticality     → 5/5
-Data classification   → Restricted
-Exploit available     → Yes
-Attack complexity     → Low
-Validation status     → Confirmed
+```bash
+ctm --scanner nuclei --export nuclei_results.jsonl
 ```
 
-Result:
+Generate JSON or HTML:
 
-```text
-Risk Score:     100
-Confidence:     95%
-Risk Level:     CRITICAL
-Decision:       TEST_IMMEDIATELY
+```bash
+ctm --scanner nuclei --export nuclei_results.jsonl --format json --output report.json
+ctm --scanner nuclei --export nuclei_results.jsonl --format html --output report.html
 ```
 
-This is the core idea behind CTM:
+Persist and compare historical risk:
 
-> **The same vulnerability can have very different risk depending on context.**
-
----
-
-## Project Structure
-
-```text
-Contextual-Threat-Modeler/
-│
-├── ctm/
-│   ├── context/
-│   ├── decision/
-│   ├── reporting/
-│   ├── scoring/
-│   ├── threat/
-│   ├── engine.py
-│   ├── scanner.py
-│   ├── scanner_engine.py
-│   └── scanner_validation.py
-│
-├── adapters/
-│   ├── generic_json.py
-│   ├── nmap.py
-│   ├── nuclei.py
-│   ├── trivy.py
-│   ├── qualys.py
-│   ├── nessus.py
-│   └── registry.py
-│
-├── mock_inputs/
-│   └── scanner_samples/
-│
-├── tests/
-│
-├── docs/
-│
-└── README.md
+```bash
+ctm --history-dir .ctm-history
 ```
+
+On the first run CTM establishes a `BASELINE`. Later runs report `IMPROVING`, `STABLE`, or `DEGRADING` based on the average contextual risk score, with per-asset deltas.
+
+Historical snapshots are stored as dedicated `snapshot-*.json` files so unrelated JSON reports can safely coexist in the same directory.
 
 ---
 
@@ -270,22 +211,10 @@ The project includes:
 - Security-control tests
 - Scanner fixture tests
 - End-to-end scanner pipeline tests
-- Empty-export regression tests
-
-The scanner pipeline has been validated against synthetic:
-
-- Nuclei
-- Trivy
-- Nessus
-- Qualys CSV
-
-CI tests:
-
-```text
-Python 3.10 ✓
-Python 3.11 ✓
-Python 3.12 ✓
-```
+- Attack-path correlation tests
+- Historical trend tests
+- CLI regression tests
+- CI validation
 
 Synthetic fixtures are used for pipeline validation and do not represent real customer infrastructure or credentials.
 
@@ -300,30 +229,23 @@ Synthetic fixtures are used for pipeline validation and do not represent real cu
 - STRIDE enrichment
 - MITRE ATT&CK enrichment
 - Decision engine
-- Attack-path analysis
 - Scanner adapter framework
-- Generic JSON adapter
-- Nmap adapter
-- Nuclei adapter
-- Trivy adapter
-- Qualys XML adapter
-- Qualys CSV adapter
-- Nessus adapter
-- Scanner normalization
-- Scanner validation
+- Generic JSON, Nmap, Nuclei, Trivy, Qualys XML, Qualys CSV, and Nessus adapters
+- Scanner normalization and validation
 - End-to-end scanner testing
-- CI validation
+- Analyst-oriented CLI
+- JSON and self-contained HTML reporting
+- Conservative same-asset attack-path correlation
+- Scanner-engine attack-path parity
+- Historical risk snapshots and trend comparison
+- CI test matrix for Python 3.10, 3.11, and 3.12
 
 ### Roadmap
 
-- Advanced reporting
-- HTML security reports
-- Additional scanner integrations
-- Improved attack-path correlation
-- Risk trend analysis
 - API interface
 - Web-based CTM dashboard
 - Additional threat-intelligence enrichment
+- Expanded historical analytics
 
 ---
 
@@ -341,6 +263,8 @@ Key documentation includes:
 - Scanner pipeline
 - Validation and reporting
 - Hardening
+- Attack-path correlation
+- Risk trend analysis
 - Changelog
 
 The development history and milestone-level changes are tracked in `docs/CTM_CHANGELOG.md`.

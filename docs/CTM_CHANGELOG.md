@@ -17,7 +17,10 @@ Strengthen Phase 3 by testing all synthetic scanner fixtures through the complet
 - README scanner-pipeline documentation updates
 
 ### Scoring alignment fix
-The Nuclei high-risk fixture now includes explicit criticality and restricted data-classification context. The previous test expected a score of at least 85 while the fixture's default asset context correctly produced 60 under the CTM formula. The fixture is now intentionally configured to represent a highly critical restricted asset, producing a 100 score and `TEST_IMMEDIATELY` decision without changing the scoring engine.
+The Nuclei high-risk fixture includes explicit criticality and restricted data-classification context. This exercises the intended CTM scoring model and produces a 100 score with `TEST_IMMEDIATELY` without changing the scoring engine.
+
+### CI test fix
+The MITRE mapping returns the canonical technique label `T1190 - Exploit Public-Facing Application`. The regression test was incorrectly checking for the bare ID `T1190`; it now asserts the exact canonical value returned by the existing mapping implementation. No production engine behavior was changed.
 
 ### Validation boundary
 Tests verify parsing, normalization, contextual enrichment, scoring, decisions, and attack-path generation. They do not claim synthetic findings are exploitable in real environments.

@@ -58,7 +58,7 @@ def test_nuclei_fixture_preserves_high_risk_context():
     assert finding.exposure["authentication_required"] is False
     assert finding.score == 100.0
     assert finding.decision == "TEST_IMMEDIATELY"
-    assert "T1190" in finding.attack_techniques
+    assert "T1190 - Exploit Public-Facing Application" in finding.attack_techniques
 
 
 def test_trivy_fixture_preserves_dependency_metadata():

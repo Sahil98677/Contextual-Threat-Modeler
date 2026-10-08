@@ -11,39 +11,13 @@ Phase 3.1 turns the synthetic scanner fixtures from parsing examples into regres
 
 ## Validation path
 
-```text
-Synthetic Export
-      ↓
-Scanner Adapter
-      ↓
-Neutral Scanner Records
-      ↓
-CTM Normalization
-      ↓
-Asset + Finding
-      ↓
-STRIDE + MITRE
-      ↓
-Likelihood + Impact + Controls
-      ↓
-Risk Score + Confidence
-      ↓
-Decision
-      ↓
-Attack Paths
-```
+Synthetic Export → Scanner Adapter → Neutral Records → CTM Normalization → Asset/Finding → STRIDE + MITRE → Likelihood + Impact + Controls → Risk + Confidence → Decision → Attack Paths.
 
-## What the tests verify
+## Scoring-aligned high-risk fixture
 
-- Expected finding counts are produced from each fixture.
-- Scanner metadata survives normalization.
-- Scores remain within the CTM 0–100 range.
-- Likelihood and impact remain within 0–10.
-- Confidence remains within 0–1.
-- Decisions use the supported CTM decision vocabulary.
-- STRIDE, MITRE, and attack-path structures are produced.
-- The high-risk Nuclei example retains its exposure and exploit context and maps to `T1190`.
-- Empty exports do not create phantom findings.
+The Nuclei `/api/users` fixture explicitly supplies a highly critical, restricted asset context so the test exercises the intended CTM scoring model. With internet exposure, no authentication, confirmed critical severity, exploit availability, and low attack complexity, the fixture reaches the `TEST_IMMEDIATELY` threshold.
+
+The test validates the model rather than hard-coding an arbitrary score for an ordinary critical finding.
 
 ## Security boundary
 

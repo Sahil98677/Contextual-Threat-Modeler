@@ -4,7 +4,7 @@ This file records meaningful architecture and implementation updates so project 
 
 ## Phase 3.1 — End-to-End Scanner Validation
 
-Status: Prepared for upload
+Status: Uploaded
 
 ### Purpose
 Strengthen Phase 3 by testing all synthetic scanner fixtures through the complete scanner-to-CTM pipeline.
@@ -15,6 +15,9 @@ Strengthen Phase 3 by testing all synthetic scanner fixtures through the complet
 - Risk, confidence, decision, STRIDE, MITRE, and attack-path assertions
 - Empty-export regression tests for all four scanner formats
 - README scanner-pipeline documentation updates
+
+### Scoring alignment fix
+The Nuclei high-risk fixture now includes explicit criticality and restricted data-classification context. The previous test expected a score of at least 85 while the fixture's default asset context correctly produced 60 under the CTM formula. The fixture is now intentionally configured to represent a highly critical restricted asset, producing a 100 score and `TEST_IMMEDIATELY` decision without changing the scoring engine.
 
 ### Validation boundary
 Tests verify parsing, normalization, contextual enrichment, scoring, decisions, and attack-path generation. They do not claim synthetic findings are exploitable in real environments.

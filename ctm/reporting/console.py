@@ -1,7 +1,7 @@
 from ..decision.decision_engine import risk_level
 
 
-def render_console(results) -> str:
+def render_console(results, trend=None) -> str:
     results = list(results)
     paths = []
     seen = set()
@@ -25,5 +25,17 @@ def render_console(results) -> str:
             lines.append(f"  {path['path_id']} | {risk_level(path['path_score'])} | {path['path_score']:.1f}/100")
             lines.append("    " + " -> ".join(path["nodes"]))
             lines.append(f"    Correlation: {path['relationship']}")
+    if trend:
+        lines.extend(["", "RISK TREND", "-" * 78])
+        lines.append(f"  Status: {trend['status']}")
+        if trend.get("available"):
+            delta = trend["average_score_delta"]
+            lines.append(f"  Average risk delta: {delta:+.1f}")
+            lines.append(f"  Previous snapshot: {trend['previous_timestamp']}")
+            for asset in trend.get("assets", []):
+                value = "n/a" if asset["delta"] is None else f"{asset['delta']:+.1f}"
+                lines.append(f"  {asset['asset_id']}: {asset['status']} ({value})")
+        else:
+            lines.append("  No previous snapshot available; this run establishes the baseline.")
     lines.extend(["", "=" * 78, f"Findings analyzed: {len(results)}", f"Attack paths correlated: {len(paths)}"])
     return "\n".join(lines)

@@ -16,11 +16,13 @@ Strengthen Phase 3 by testing all synthetic scanner fixtures through the complet
 - Empty-export regression tests for all four scanner formats
 - README scanner-pipeline documentation updates
 
-### Scoring alignment fix
-The Nuclei high-risk fixture includes explicit criticality and restricted data-classification context. This exercises the intended CTM scoring model and produces a 100 score with `TEST_IMMEDIATELY` without changing the scoring engine.
+### Scoring and MITRE context fixes
+The Nuclei high-risk fixture explicitly represents an API endpoint with criticality 5 and restricted data classification. The explicit `endpoint_type: api` is required because the existing MITRE mapper maps `api` endpoints to `T1190 - Exploit Public-Facing Application`; a generic `https` service alone does not trigger that mapping.
 
-### CI test fix
-The MITRE mapping returns the canonical technique label `T1190 - Exploit Public-Facing Application`. The regression test was incorrectly checking for the bare ID `T1190`; it now asserts the exact canonical value returned by the existing mapping implementation. No production engine behavior was changed.
+The fixture therefore tests both contextual risk prioritization and the intended MITRE enrichment path without changing production engine behavior.
+
+### CI validation
+The previous CI failure was traced to fixture context: the endpoint was normalized as `https`, so the existing MITRE mapping correctly returned an empty list. The fixture now declares its semantic endpoint type as `api`.
 
 ### Validation boundary
 Tests verify parsing, normalization, contextual enrichment, scoring, decisions, and attack-path generation. They do not claim synthetic findings are exploitable in real environments.

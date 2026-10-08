@@ -8,6 +8,41 @@ def _list(value, empty="None"):
     return html.escape(", ".join(value) or empty)
 
 
+def _attack_paths(results):
+    paths = {}
+    for finding in results:
+        for path in finding.attack_paths:
+            paths.setdefault(path["path_id"], path)
+
+    if not paths:
+        return (
+            '<section class="panel"><h2>Attack paths</h2>'
+            "<p>No correlated attack paths were identified.</p></section>"
+        )
+
+    cards = []
+    for path in sorted(paths.values(), key=lambda item: item["path_score"], reverse=True):
+        nodes = "".join(
+            f'<div class="path-node">{html.escape(node)}</div>'
+            for node in path["nodes"]
+        )
+        cards.append(
+            f"""
+            <section class="path-card">
+              <div class="finding-head">
+                <strong>{html.escape(path["path_id"])}</strong>
+                <span class="score">{html.escape(risk_level(path["path_score"]))} · {path["path_score"]:.1f}/100</span>
+              </div>
+              <div class="path-flow">{nodes}</div>
+              <p><strong>Entry:</strong> {html.escape(path["entry"])}</p>
+              <p><strong>Target:</strong> {html.escape(path["target"])}</p>
+              <p><strong>Correlation:</strong> {html.escape(path["relationship"])}</p>
+            </section>
+            """
+        )
+    return '<section class="panel"><h2>Attack paths</h2>' + "".join(cards) + "</section>"
+
+
 def render_html(results) -> str:
     results = list(results)
     summary = summarize_findings(results)
@@ -77,6 +112,10 @@ li {{ display: flex; justify-content: space-between; padding: 6px 0; border-bott
 .decision {{ font-weight: 700; }}
 .metrics {{ display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 14px 0; }}
 .metrics span {{ padding: 8px; background: #f2f2f3; border-radius: 6px; font-size: .9rem; }}
+.path-card {{ margin: 12px 0; }}
+.path-flow {{ display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 14px 0; }}
+.path-node {{ padding: 9px 12px; background: #f2f2f3; border-radius: 7px; }}
+.path-node:not(:last-child)::after {{ content: "→"; margin-left: 8px; }}
 .empty {{ background: #fff; border: 1px solid #ddd; border-radius: 10px; padding: 32px; text-align: center; }}
 @media (max-width: 760px) {{
   .summary, .panels, .metrics {{ grid-template-columns: 1fr 1fr; }}
@@ -98,6 +137,7 @@ li {{ display: flex; justify-content: space-between; padding: 6px 0; border-bott
   <section class="panel"><h2>Risk distribution</h2><ul>{risk_items}</ul></section>
   <section class="panel"><h2>Decisions</h2><ul>{decision_items}</ul></section>
 </div>
+{_attack_paths(results)}
 {empty}
 {"".join(cards)}
 </body>

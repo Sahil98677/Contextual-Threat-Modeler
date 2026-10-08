@@ -25,7 +25,8 @@ def test_html_report_contains_summary_and_findings(sample_results):
     assert "Contextual Threat Modeler" in report
     assert "Risk distribution" in report
     assert "Decisions" in report
-    assert "TEST_IMMEDIATELY" in report
+    assert "Attack paths" in report
+    assert "PATH-" in report
 
 
 def test_html_report_handles_empty_results():

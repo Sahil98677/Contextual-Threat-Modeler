@@ -8,9 +8,9 @@ from adapters.registry import parse_export
 from .context.asset import build_asset
 from .decision.decision_engine import decide
 from .models import Finding
-from .scoring.risk import calculate_risk
 from .scanner import normalize_scanner_records
-from .threat.attack_paths import build_attack_paths
+from .scoring.risk import calculate_risk
+from .threat.attack_paths import build_correlated_attack_paths
 from .threat.mitre import map_mitre
 from .threat.stride import map_stride
 
@@ -46,10 +46,15 @@ def run_scanner(
 
         calculate_risk(finding, asset)
         finding.decision = decide(finding.score, finding.confidence)
-        finding.attack_paths = [
-            path.to_dict() for path in build_attack_paths(finding, asset)
-        ]
         results.append(finding)
+
+    correlated_paths = build_correlated_attack_paths(results, assets)
+    by_finding = {finding.id: [] for finding in results}
+    for path in correlated_paths:
+        for finding_id in path.finding_ids:
+            by_finding.setdefault(finding_id, []).append(path.to_dict())
+    for finding in results:
+        finding.attack_paths = by_finding.get(finding.id, [])
 
     return sorted(results, key=lambda item: item.score, reverse=True)
 

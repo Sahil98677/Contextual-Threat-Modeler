@@ -1,3 +1,20 @@
+## Phase 5.1 — Scanner Engine Attack-Path Parity
+
+Status: Prepared for upload — pending CI verification
+
+### Purpose
+Ensure scanner-export analysis uses the same conservative attack-path correlation model as the built-in CTM input workflow.
+
+### Changes
+- Replaced per-finding scanner-engine path construction with the Phase 5 correlation engine
+- Correlate same-asset scanner findings when at least one finding is internet-facing
+- Attach correlated path structures back to every participating finding
+- Added scanner-engine regression coverage for same-asset correlation
+- Preserved the existing scanner adapter and risk-scoring boundaries
+
+### Design boundary
+Scanner exports are normalized into CTM findings before analysis. Correlation remains conservative candidate analysis and does not claim exploitability between findings unless the input context establishes that relationship.
+
 ## Phase 5 — Attack-Path Correlation
 
 Status: Implemented — pending CI verification

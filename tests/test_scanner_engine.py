@@ -40,6 +40,51 @@ def test_nuclei_export_reaches_risk_engine(tmp_path: Path):
     assert isinstance(finding.attack_paths, list)
 
 
+def test_scanner_export_correlates_same_asset_findings(tmp_path: Path):
+    path = tmp_path / "nuclei.jsonl"
+    path.write_text(
+        "\n".join([
+            json.dumps({
+                "host": "api.example.test",
+                "path": "/api/users",
+                "service": "https",
+                "endpoint_type": "api",
+                "severity": "critical",
+                "internet_facing": True,
+                "authentication_required": False,
+                "criticality": 5,
+                "data_classification": "restricted",
+                "cve": "CVE-2026-0001",
+                "impact": "critical",
+                "exploit_available": True,
+                "attack_complexity": "low",
+                "title": "Example public API vulnerability",
+            }),
+            json.dumps({
+                "host": "api.example.test",
+                "path": "/api/profile",
+                "service": "https",
+                "endpoint_type": "api",
+                "severity": "medium",
+                "internet_facing": True,
+                "authentication_required": True,
+                "title": "Example medium API finding",
+            }),
+        ]),
+        encoding="utf-8",
+    )
+
+    results = run_scanner("nuclei", path)
+
+    assert len(results) == 2
+    path_ids = {path["path_id"] for finding in results for path in finding.attack_paths}
+    assert path_ids == {"PATH-001"}
+    correlated = results[0].attack_paths[0]
+    assert correlated["relationship"] == "same-asset candidate correlation"
+    assert correlated["finding_ids"] == ["NUCLEI-0001", "NUCLEI-0002"]
+    assert correlated["nodes"][-1] == "api.example.test"
+
+
 def test_scanner_dict_wrapper_is_json_serializable(tmp_path: Path):
     path = tmp_path / "report.json"
     path.write_text(

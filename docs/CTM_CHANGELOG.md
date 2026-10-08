@@ -1,19 +1,14 @@
-
-## Phase 4 — Analyst-Oriented Reporting and CLI
+## Phase 4.1 — Reporting Test Fixture Fix
 
 Status: Prepared for upload
 
 ### Purpose
-Keep the CLI clean and analyst-oriented rather than turning CTM into another scanner CLI with dozens of flags.
+Fix the Phase 4 reporting regression tests so they provide the `sample_results` pytest fixture required by the JSON and HTML report tests.
 
 ### Changes
-- Added direct scanner-export input through `--scanner` and `--export`
-- Kept the primary interface to a small set of source, format, and output options
-- Preserved the existing `ctm` default workflow for built-in CTM inputs
-- Added structured JSON report metadata and summary information
-- Improved self-contained HTML reporting with summary metrics and finding details
-- Added regression tests for reporting and CLI validation
-- Added phase-specific usage and security-boundary documentation
+- Added a local `sample_results` pytest fixture backed by the deterministic `mock_inputs` dataset
+- Kept reporting assertions unchanged
+- Avoided introducing new CLI flags or changing CTM engine behavior
 
-### Design boundary
-The CLI orchestrates input and reporting. Contextual risk calculation, threat modeling, scoring, decisions, and attack paths remain in the CTM engine.
+### CI validation
+The failed CI run showed two reporting tests erroring during setup because `sample_results` was undefined. This update addresses that test-isolation issue directly.

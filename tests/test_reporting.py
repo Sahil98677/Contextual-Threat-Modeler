@@ -1,7 +1,15 @@
 import json
 
+import pytest
+
+from ctm.engine import run
 from ctm.reporting.html_report import render_html
 from ctm.reporting.json_report import render_json
+
+
+@pytest.fixture
+def sample_results():
+    return run("mock_inputs")
 
 
 def test_json_report_contains_summary_and_findings(sample_results):

@@ -2,40 +2,45 @@
 
 This file records meaningful architecture and implementation updates so project documentation can be reconstructed from the repository itself.
 
-## Phase 2.1 — Scanner Normalization Hardening
+## Phase 3 — Scanner Validation and Reporting
 
 Status: Prepared for upload
 
 ### Purpose
-Harden the boundary between external scanner exports and CTM's internal data model.
+Validate the complete scanner-to-CTM path using safe synthetic exports and add a compact reporting summary.
+
+### Added
+- Synthetic Nuclei JSONL fixture
+- Synthetic Trivy JSON fixture
+- Synthetic Nessus XML fixture
+- Synthetic Qualys CSV fixture
+- `ctm/scanner_validation.py`
+- `tests/test_scanner_validation.py`
+- `docs/PHASE_3_VALIDATION_REPORTING.md`
+
+### Validation path
+Scanner export → Adapter → Normalization → Finding/Asset → STRIDE + MITRE → Risk → Decision → Attack Paths → Summary.
+
+### Security considerations
+Fixtures contain synthetic data only. No real credentials, customer infrastructure, or production scan exports should be committed.
+
+---
+
+## Phase 2.1 — Scanner Normalization Hardening
+
+Status: Uploaded
 
 ### Changes
-- Added safe boolean parsing for external scanner values.
-- Prevented values such as `"false"` from becoming Python `True`.
-- Normalized asset criticality to the CTM 1–5 range.
-- Added fallback to criticality 3 for malformed values.
-- Normalized scanner severity to CTM severity categories.
-- Preserved explicit vulnerability status when supplied.
-- Added deterministic sanitized scanner asset IDs.
-- Added type checks for scanner-provided controls and tags.
-- Normalized `exploit_available` to a real boolean.
+- Safe boolean parsing
+- Criticality normalization to 1–5
+- Severity normalization
+- Explicit status precedence
+- Deterministic sanitized asset IDs
+- Type checks for controls and tags
+- Boolean normalization for exploit availability
 
 ### Tests
-Added regression coverage for:
-- string boolean handling
-- criticality clamping
-- malformed criticality
-- severity normalization
-- explicit status precedence
-- deterministic asset IDs
-- invalid controls/tags
-
-### Architecture impact
-The scanner ingestion boundary is now more defensive before data reaches:
-`Finding → STRIDE → MITRE → Risk → Decision → Attack Paths`.
-
-### Security impact
-Scanner exports are treated as untrusted input and constrained before their values influence CTM scoring or decisions.
+Regression tests cover boolean handling, criticality, severity, status, asset IDs, and invalid types.
 
 ---
 
@@ -53,9 +58,6 @@ Scanner export → Adapter Registry → Neutral Records → CTM Normalization �
 
 ### Supported scanners
 Generic JSON, Nmap, Nuclei, Trivy, Qualys XML, Qualys CSV, Nessus.
-
-### Important boundary
-Nmap service discovery is not automatically equivalent to a vulnerability finding.
 
 ---
 
@@ -75,7 +77,7 @@ Status: Uploaded
 - `tests/test_adapters.py`
 
 ### Architecture
-All scanner adapters now implement the common `ScannerAdapter` interface and are resolved through the adapter registry.
+All scanner adapters implement the common `ScannerAdapter` interface and are resolved through the adapter registry.
 
 ---
 

@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<NessusClientData_v2>
+  <Report>
+    <ReportHost name="10.10.10.20">
+      <ReportItem pluginID="90001" pluginName="Example TLS Finding" severity="3" port="443" protocol="tcp" svc_name="https" risk_factor="High">
+        <description>Synthetic Nessus finding for CTM validation.</description>
+        <solution>Apply the vendor-recommended TLS configuration.</solution>
+      </ReportItem>
+    </ReportHost>
+  </Report>
+</NessusClientData_v2>

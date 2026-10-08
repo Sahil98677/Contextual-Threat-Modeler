@@ -1,0 +1,2 @@
+{"host":"api.example.test","path":"/api/users","service":"https","severity":"critical","internet_facing":true,"authentication_required":false,"cve":"CVE-2026-0001","impact":"critical","exploit_available":true,"attack_complexity":"low","title":"Example public API vulnerability"}
+{"host":"api.example.test","path":"/api/profile","service":"https","severity":"medium","internet_facing":true,"authentication_required":true,"title":"Example medium API finding"}

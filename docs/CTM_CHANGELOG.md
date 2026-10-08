@@ -1,14 +1,19 @@
-## Phase 4.1 — Reporting Test Fixture Fix
+## Phase 5 — Attack-Path Correlation
 
 Status: Prepared for upload
 
 ### Purpose
-Fix the Phase 4 reporting regression tests so they provide the `sample_results` pytest fixture required by the JSON and HTML report tests.
+Improve CTM attack-path analysis so related findings can be presented as conservative candidate attack paths rather than isolated one-finding paths.
 
 ### Changes
-- Added a local `sample_results` pytest fixture backed by the deterministic `mock_inputs` dataset
-- Kept reporting assertions unchanged
-- Avoided introducing new CLI flags or changing CTM engine behavior
+- Added path IDs, nodes, finding IDs, and correlation metadata to attack paths
+- Added same-asset candidate correlation across findings
+- Added path-level scoring and prioritization
+- Added attack-path display to console reporting
+- Added attack-path flow cards to HTML reporting
+- Preserved full attack-path structures in JSON reporting through existing finding serialization
+- Kept correlation conservative and explicitly distinguished from verified exploit chains
+- Added Phase 5 attack-path documentation and regression coverage
 
-### CI validation
-The failed CI run showed two reporting tests erroring during setup because `sample_results` was undefined. This update addresses that test-isolation issue directly.
+### Design boundary
+Attack-path correlation is an analysis and prioritization capability. CTM does not automatically exploit targets or claim exploitability relationships that are not supported by input context.

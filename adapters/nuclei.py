@@ -1,13 +1,23 @@
+"""Nuclei JSONL scanner adapter."""
+from __future__ import annotations
+
 import json
 from pathlib import Path
+from typing import Any
+
+from .base import ScannerAdapter
 
 
-def parse_jsonl(path: str | Path) -> list[dict]:
-    """Read Nuclei JSONL output as neutral records without executing Nuclei."""
-    records = []
-    with Path(path).open("r", encoding="utf-8") as handle:
-        for line in handle:
-            line = line.strip()
-            if line:
-                records.append(json.loads(line))
-    return records
+class NucleiAdapter(ScannerAdapter):
+    name = "nuclei"
+
+    def parse(self, path: str | Path) -> list[dict[str, Any]]:
+        records = []
+        with Path(path).open("r", encoding="utf-8") as handle:
+            for line in handle:
+                line = line.strip()
+                if line:
+                    record = json.loads(line)
+                    if isinstance(record, dict):
+                        records.append(record)
+        return records

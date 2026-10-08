@@ -1,7 +1,11 @@
-"""Nessus .nessus XML adapter. Parses exports without executing Nessus."""
+"""Nessus .nessus XML scanner adapter."""
+from __future__ import annotations
+
 import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Any
+
+from .base import ScannerAdapter
 
 
 def _text(element: ET.Element | None, name: str) -> str | None:
@@ -12,33 +16,36 @@ def _text(element: ET.Element | None, name: str) -> str | None:
 def _float(value: str | None) -> float | None:
     try:
         return float(value) if value not in (None, "") else None
-    except ValueError:
+    except (TypeError, ValueError):
         return None
 
 
-def parse_xml(path: str | Path) -> list[dict[str, Any]]:
-    """Parse a Nessus .nessus XML export into neutral vulnerability records."""
-    root = ET.parse(Path(path)).getroot()
-    records = []
-    for report_host in root.findall(".//ReportHost"):
-        host = report_host.get("name", "unknown")
-        for item in report_host.findall("ReportItem"):
-            severity = item.get("severity", "0")
-            records.append({
-                "source": "nessus",
-                "host": host,
-                "plugin_id": item.get("pluginID"),
-                "plugin_name": item.get("pluginName", ""),
-                "port": int(item.get("port", 0) or 0),
-                "protocol": item.get("protocol", ""),
-                "service": item.get("svc_name", ""),
-                "severity": int(severity) if severity.isdigit() else severity,
-                "risk_factor": item.get("risk_factor", ""),
-                "cve": item.get("cve", ""),
-                "cvss_v2": _float(item.get("cvss_base_score")),
-                "cvss_v3": _float(item.get("cvss3_base_score")),
-                "description": _text(item, "description") or "",
-                "solution": _text(item, "solution") or "",
-                "plugin_output": _text(item, "plugin_output") or "",
-            })
-    return records
+class NessusAdapter(ScannerAdapter):
+    name = "nessus"
+
+    def parse(self, path: str | Path) -> list[dict[str, Any]]:
+        root = ET.parse(Path(path)).getroot()
+        records = []
+
+        for report_host in root.findall(".//ReportHost"):
+            host = report_host.get("name", "unknown")
+            for item in report_host.findall("ReportItem"):
+                severity = item.get("severity", "0")
+                records.append({
+                    "source": self.name,
+                    "host": host,
+                    "plugin_id": item.get("pluginID"),
+                    "plugin_name": item.get("pluginName", ""),
+                    "port": int(item.get("port", 0) or 0),
+                    "protocol": item.get("protocol", ""),
+                    "service": item.get("svc_name", ""),
+                    "severity": int(severity) if severity.isdigit() else severity,
+                    "risk_factor": item.get("risk_factor", ""),
+                    "cve": item.get("cve", ""),
+                    "cvss_v2": _float(item.get("cvss_base_score")),
+                    "cvss_v3": _float(item.get("cvss3_base_score")),
+                    "description": _text(item, "description") or "",
+                    "solution": _text(item, "solution") or "",
+                    "plugin_output": _text(item, "plugin_output") or "",
+                })
+        return records

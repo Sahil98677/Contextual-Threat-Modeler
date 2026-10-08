@@ -5,26 +5,63 @@ from ctm.engine import run
 from ctm.reporting.console import render_console
 from ctm.reporting.html_report import render_html
 from ctm.reporting.json_report import render_json
+from ctm.scanner_engine import run_scanner
+
+
+SCANNERS = (
+    "generic-json",
+    "nmap",
+    "nuclei",
+    "trivy",
+    "qualys-xml",
+    "qualys-csv",
+    "nessus",
+)
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(
         description="Contextual Threat Modeler security decision engine"
     )
-    parser.add_argument(
+    source = parser.add_mutually_exclusive_group()
+    source.add_argument(
         "--input-dir",
         default="mock_inputs",
-        help="Directory containing CTM JSON input files",
+        help="Directory containing CTM JSON input files (default: mock_inputs)",
+    )
+    source.add_argument(
+        "--export",
+        help="Existing scanner export to analyze",
+    )
+    parser.add_argument(
+        "--scanner",
+        choices=SCANNERS,
+        help="Scanner format used by --export",
     )
     parser.add_argument(
         "--format",
         choices=("console", "json", "html"),
         default="console",
+        help="Report format (default: console)",
     )
-    parser.add_argument("--output", help="Output file for JSON or HTML reports")
+    parser.add_argument(
+        "--output",
+        help="Write JSON/HTML report to a file instead of stdout",
+    )
     args = parser.parse_args()
 
-    results = run(args.input_dir)
+    if args.export and not args.scanner:
+        parser.error("--export requires --scanner")
+    if args.scanner and not args.export:
+        parser.error("--scanner requires --export")
+    if args.output and args.format == "console":
+        parser.error("--output is only valid with --format json or --format html")
+
+    results = (
+        run_scanner(args.scanner, args.export)
+        if args.export
+        else run(args.input_dir)
+    )
 
     if args.format == "console":
         print(render_console(results))

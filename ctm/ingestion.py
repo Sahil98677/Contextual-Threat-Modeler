@@ -14,6 +14,23 @@ REQUIRED_FILES = {
 VALID_STATUSES = {"discovered", "suspected", "validated", "confirmed"}
 
 
+def _as_bool(value: Any, default: bool = False) -> bool:
+    """Parse common JSON boolean representations without bool('false') pitfalls."""
+    if value is None:
+        return default
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return value != 0
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized in {"true", "yes", "y", "1", "on"}:
+            return True
+        if normalized in {"false", "no", "n", "0", "off", ""}:
+            return False
+    return default
+
+
 def load_json(path: Path) -> Any:
     with path.open("r", encoding="utf-8") as handle:
         return json.load(handle)
@@ -113,9 +130,9 @@ def normalize(raw: dict[str, Any]) -> dict[str, Any]:
                 "path": path,
                 "endpoint_type": endpoint.get("type", "unknown").lower(),
                 "exposure": {
-                    "internet_facing": bool(endpoint.get("internet_facing", False)),
-                    "authentication_required": bool(
-                        endpoint.get("authentication_required", True)
+                    "internet_facing": _as_bool(endpoint.get("internet_facing", False)),
+                    "authentication_required": _as_bool(
+                        endpoint.get("authentication_required", True), True
                     ),
                     "trust_zone": endpoint.get("trust_zone", "internal"),
                 },

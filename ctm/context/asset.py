@@ -1,4 +1,5 @@
 from ..models import Asset
+from .values import as_bool
 
 
 def normalize_criticality(value: int | float) -> int:
@@ -12,7 +13,7 @@ def build_asset(raw: dict) -> Asset:
         asset_type=raw.get("asset_type", "web_application"),
         criticality=normalize_criticality(raw.get("criticality", 3)),
         data_classification=raw.get("data_classification", "internal").lower(),
-        production=bool(raw.get("production", True)),
+        production=as_bool(raw.get("production", True), True),
         owner=raw.get("owner", ""),
         tags=list(raw.get("tags", [])),
     )

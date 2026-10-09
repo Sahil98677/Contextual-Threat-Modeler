@@ -1,3 +1,5 @@
+from .values import as_bool
+
 CONTROL_MODIFIERS = {
     "waf": 0.90,
     "file_validation": 0.75,
@@ -9,13 +11,13 @@ CONTROL_MODIFIERS = {
 
 def control_modifier(controls: dict) -> float:
     modifier = 1.0
-    if controls.get("waf"):
+    if as_bool(controls.get("waf")):
         modifier *= CONTROL_MODIFIERS["waf"]
-    if controls.get("file_validation") is True:
+    if as_bool(controls.get("file_validation")):
         modifier *= CONTROL_MODIFIERS["file_validation"]
-    if controls.get("av_scanning") is True:
+    if as_bool(controls.get("av_scanning")):
         modifier *= CONTROL_MODIFIERS["av_scanning"]
-    if controls.get("mfa") is True:
+    if as_bool(controls.get("mfa")):
         modifier *= CONTROL_MODIFIERS["mfa"]
     if controls.get("security_headers") == "strong":
         modifier *= CONTROL_MODIFIERS["security_headers_strong"]

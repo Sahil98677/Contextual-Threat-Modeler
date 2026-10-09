@@ -9,6 +9,8 @@ from .base import ScannerAdapter
 
 
 class GenericJSONAdapter(ScannerAdapter):
+    """Parse JSON objects or arrays of objects."""
+
     name = "generic-json"
 
     def parse(self, path: str | Path) -> list[dict[str, Any]]:

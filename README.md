@@ -295,6 +295,8 @@ Detailed documentation is maintained under `docs/`. Key documentation covers CTM
 
 Development milestones are tracked in `docs/CTM_CHANGELOG.md`.
 
+- [Contributing to CTM](CONTRIBUTING.md) — development setup, testing, and pull request guidelines.
+
 ## Troubleshooting
 
 - **`ctm` is not recognized / command not found:** Activate the virtual environment and install the project with `python -m pip install -e .`. You can also try `python ctm_cli.py` from the repository root.

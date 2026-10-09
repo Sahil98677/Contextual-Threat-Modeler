@@ -2,17 +2,14 @@
 from __future__ import annotations
 
 import csv
+import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Any
-from xml.etree.ElementTree import Element
-
-from defusedxml import ElementTree as ET
 
 from .base import ScannerAdapter
 
 
-def _child_text(element: Element, *names: str) -> str:
-    """Return the first matching descendant's text."""
+def _child_text(element: ET.Element, *names: str) -> str:
     for name in names:
         child = element.find(f".//{name}")
         if child is not None and child.text:
@@ -20,8 +17,7 @@ def _child_text(element: Element, *names: str) -> str:
     return ""
 
 
-def _attr_or_child(element: Element, *names: str) -> str:
-    """Read a value from an attribute first, then from a child element."""
+def _attr_or_child(element: ET.Element, *names: str) -> str:
     for name in names:
         value = element.get(name)
         if value not in (None, ""):
@@ -30,7 +26,6 @@ def _attr_or_child(element: Element, *names: str) -> str:
 
 
 def _float(value: str | None) -> float | None:
-    """Convert a string to float without raising on empty or invalid values."""
     try:
         return float(value) if value not in (None, "") else None
     except (TypeError, ValueError):
@@ -38,71 +33,51 @@ def _float(value: str | None) -> float | None:
 
 
 class QualysXMLAdapter(ScannerAdapter):
-    """Parse Qualys XML exports."""
-
     name = "qualys-xml"
 
     def parse(self, path: str | Path) -> list[dict[str, Any]]:
-        tree = ET.parse(Path(path))
-        root = tree.getroot()
-        if root is None:
-            raise ValueError("Qualys XML export has no root element.")
-
-        records: list[dict[str, Any]] = []
+        root = ET.parse(Path(path)).getroot()
+        records = []
         elements = root.findall(".//VULN") or root.findall(".//Vulnerability")
+
         for vuln in elements:
-            records.append(
-                {
-                    "source": "qualys",
-                    "host": _attr_or_child(vuln, "host", "IP", "ip", "asset", "asset_id"),
-                    "qid": _attr_or_child(vuln, "number", "qid", "QID", "id"),
-                    "title": _attr_or_child(vuln, "title", "TITLE", "name"),
-                    "severity": _attr_or_child(vuln, "severity", "SEVERITY"),
-                    "cvss_v3": _float(
-                        _attr_or_child(vuln, "cvss3_base", "CVSS3_BASE", "cvss_v3")
-                    ),
-                    "cve": _attr_or_child(vuln, "cve", "CVE_ID", "cve_id"),
-                    "category": _attr_or_child(vuln, "category", "CATEGORY"),
-                    "diagnosis": _child_text(vuln, "DIAGNOSIS", "diagnosis"),
-                    "solution": _child_text(vuln, "SOLUTION", "solution"),
-                }
-            )
+            records.append({
+                "source": "qualys",
+                "host": _attr_or_child(vuln, "host", "IP", "ip", "asset", "asset_id"),
+                "qid": _attr_or_child(vuln, "number", "qid", "QID", "id"),
+                "title": _attr_or_child(vuln, "title", "TITLE", "name"),
+                "severity": _attr_or_child(vuln, "severity", "SEVERITY"),
+                "cvss_v3": _float(_attr_or_child(vuln, "cvss3_base", "CVSS3_BASE", "cvss_v3")),
+                "cve": _attr_or_child(vuln, "cve", "CVE_ID", "cve_id"),
+                "category": _attr_or_child(vuln, "category", "CATEGORY"),
+                "diagnosis": _child_text(vuln, "DIAGNOSIS", "diagnosis"),
+                "solution": _child_text(vuln, "SOLUTION", "solution"),
+            })
         return records
 
 
 class QualysCSVAdapter(ScannerAdapter):
-    """Parse Qualys CSV exports."""
-
     name = "qualys-csv"
 
     def parse(self, path: str | Path) -> list[dict[str, Any]]:
-        records: list[dict[str, Any]] = []
+        records = []
         with Path(path).open("r", encoding="utf-8-sig", newline="") as handle:
             for row in csv.DictReader(handle):
-                lowered = {
-                    str(key).strip().lower(): value for key, value in row.items()
-                }
-                records.append(
-                    {
-                        "source": "qualys",
-                        "host": lowered.get("host")
-                        or lowered.get("ip")
-                        or lowered.get("asset")
-                        or "",
-                        "qid": lowered.get("qid") or lowered.get("qid id") or "",
-                        "title": lowered.get("title")
-                        or lowered.get("vulnerability")
-                        or "",
-                        "severity": lowered.get("severity") or "",
-                        "cvss_v3": _float(
-                            lowered.get("cvss v3")
-                            or lowered.get("cvss v3 base")
-                            or lowered.get("cvss3 base score")
-                        ),
-                        "cve": lowered.get("cve") or lowered.get("cve id") or "",
-                        "category": lowered.get("category") or "",
-                        "diagnosis": lowered.get("diagnosis") or "",
-                        "solution": lowered.get("solution") or "",
-                    }
-                )
+                lowered = {str(k).strip().lower(): v for k, v in row.items()}
+                records.append({
+                    "source": "qualys",
+                    "host": lowered.get("host") or lowered.get("ip") or lowered.get("asset") or "",
+                    "qid": lowered.get("qid") or lowered.get("qid id") or "",
+                    "title": lowered.get("title") or lowered.get("vulnerability") or "",
+                    "severity": lowered.get("severity") or "",
+                    "cvss_v3": _float(
+                        lowered.get("cvss v3")
+                        or lowered.get("cvss v3 base")
+                        or lowered.get("cvss3 base score")
+                    ),
+                    "cve": lowered.get("cve") or lowered.get("cve id") or "",
+                    "category": lowered.get("category") or "",
+                    "diagnosis": lowered.get("diagnosis") or "",
+                    "solution": lowered.get("solution") or "",
+                })
         return records

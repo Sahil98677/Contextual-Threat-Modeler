@@ -9,23 +9,15 @@ from .base import ScannerAdapter
 
 
 class NucleiAdapter(ScannerAdapter):
-    """Parse Nuclei JSON Lines exports."""
-
     name = "nuclei"
 
     def parse(self, path: str | Path) -> list[dict[str, Any]]:
-        records: list[dict[str, Any]] = []
+        records = []
         with Path(path).open("r", encoding="utf-8") as handle:
-            for line_number, line in enumerate(handle, start=1):
+            for line in handle:
                 line = line.strip()
-                if not line:
-                    continue
-                try:
+                if line:
                     record = json.loads(line)
-                except json.JSONDecodeError as exc:
-                    raise ValueError(
-                        f"Invalid Nuclei JSON on line {line_number}: {exc.msg}"
-                    ) from exc
-                if isinstance(record, dict):
-                    records.append(record)
+                    if isinstance(record, dict):
+                        records.append(record)
         return records

@@ -1,10 +1,3 @@
-from .thresholds import (
-    CRITICAL_THRESHOLD,
-    HIGH_THRESHOLD,
-    MEDIUM_THRESHOLD,
-    MIN_CONFIDENCE_FOR_IMMEDIATE_TEST,
-)
-
 DECISIONS = (
     "TEST_IMMEDIATELY",
     "PRIORITIZE_VALIDATION",
@@ -14,20 +7,20 @@ DECISIONS = (
 
 
 def decide(score: float, confidence: float) -> str:
-    if score >= CRITICAL_THRESHOLD and confidence >= MIN_CONFIDENCE_FOR_IMMEDIATE_TEST:
+    if score >= 85 and confidence >= 0.60:
         return "TEST_IMMEDIATELY"
-    if score >= HIGH_THRESHOLD:
+    if score >= 70:
         return "PRIORITIZE_VALIDATION"
-    if score >= MEDIUM_THRESHOLD:
+    if score >= 45:
         return "INVESTIGATE"
     return "MONITOR"
 
 
 def risk_level(score: float) -> str:
-    if score >= CRITICAL_THRESHOLD:
+    if score >= 85:
         return "CRITICAL"
-    if score >= HIGH_THRESHOLD:
+    if score >= 70:
         return "HIGH"
-    if score >= MEDIUM_THRESHOLD:
+    if score >= 45:
         return "MEDIUM"
     return "LOW"

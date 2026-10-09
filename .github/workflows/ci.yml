@@ -1,31 +1,47 @@
-name: CI
+
+name: CTM CI
 
 on:
   push:
-    branches: ["main"]
+    branches:
+      - main
   pull_request:
+  workflow_dispatch:
 
 jobs:
   test:
+    name: Tests and Security Checks
     runs-on: ubuntu-latest
 
     strategy:
+      fail-fast: false
       matrix:
         python-version: ["3.10", "3.11", "3.12"]
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
+          cache: pip
 
-      - name: Install project and test dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -e .
-          pip install pytest
+      - name: Upgrade pip
+        run: python -m pip install --upgrade pip
+
+      - name: Install project and development dependencies
+        run: python -m pip install -e ".[dev]"
 
       - name: Run tests
-        run: pytest -q
+        run: python -m pytest -q
+
+      - name: Lint with Ruff
+        run: python -m ruff check .
+
+      - name: Security scan with Bandit
+        run: python -m bandit -r ctm adapters -ll
+
+      - name: Type check with Mypy
+        run: python -m mypy ctm adapters

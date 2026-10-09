@@ -4,6 +4,7 @@ from __future__ import annotations
 import re
 from typing import Any
 
+from .context.severity import normalize_severity
 from .models import Asset, Finding
 
 VALID_STATUSES = {"discovered", "suspected", "validated", "confirmed"}
@@ -66,9 +67,9 @@ def _status(record: dict[str, Any]) -> str:
     return SEVERITY_STATUS.get(severity, "discovered")
 
 
-def _normalized_severity(value: Any) -> str:
-    severity = str(value or "unknown").strip().lower()
-    return SEVERITY_LEVELS.get(severity, "info")
+def _normalized_severity(value: Any, source: str = "", risk_factor: Any = None) -> str:
+    """Normalize severity using the source scanner's documented numeric scale."""
+    return normalize_severity(value, source=source, risk_factor=risk_factor)
 
 
 def _target(record: dict[str, Any]) -> str:
@@ -113,10 +114,13 @@ def _title(record: dict[str, Any]) -> str:
     )
 
 
-def _vulnerability(record: dict[str, Any]) -> dict[str, Any]:
+def _vulnerability(record: dict[str, Any], source: str) -> dict[str, Any]:
+    risk_factor = record.get("risk_factor")
     value = {
         "status": _status(record),
-        "severity": _normalized_severity(record.get("severity")),
+        "severity": _normalized_severity(
+            record.get("severity"), source=source, risk_factor=risk_factor
+        ),
         "title": _title(record),
     }
 
@@ -132,6 +136,7 @@ def _vulnerability(record: dict[str, Any]) -> dict[str, Any]:
         "exploit_available",
         "attack_complexity",
         "impact",
+        "risk_factor",
     ):
         if key in record and record[key] not in (None, ""):
             value[key] = record[key]
@@ -195,7 +200,7 @@ def normalize_scanner_records(
                     ),
                     "trust_zone": record.get("trust_zone", "internal"),
                 },
-                "vulnerability": _vulnerability(record),
+                "vulnerability": _vulnerability(record, source_name),
                 "controls": dict(record.get("controls") or {})
                 if isinstance(record.get("controls") or {}, dict)
                 else {},

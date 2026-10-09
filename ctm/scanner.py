@@ -58,12 +58,15 @@ def _criticality(value: Any) -> int:
     return max(1, min(5, parsed))
 
 
-def _status(record: dict[str, Any]) -> str:
+def _status(record: dict[str, Any], normalized_severity: str | None = None) -> str:
+    """Derive status from explicit status or canonical, source-normalized severity."""
     explicit = str(record.get("status", "")).strip().lower()
     if explicit in VALID_STATUSES:
         return explicit
 
-    severity = str(record.get("severity", "")).strip().lower()
+    severity = normalized_severity
+    if severity is None:
+        severity = str(record.get("severity", "")).strip().lower()
     return SEVERITY_STATUS.get(severity, "discovered")
 
 
@@ -116,11 +119,12 @@ def _title(record: dict[str, Any]) -> str:
 
 def _vulnerability(record: dict[str, Any], source: str) -> dict[str, Any]:
     risk_factor = record.get("risk_factor")
+    severity = _normalized_severity(
+        record.get("severity"), source=source, risk_factor=risk_factor
+    )
     value = {
-        "status": _status(record),
-        "severity": _normalized_severity(
-            record.get("severity"), source=source, risk_factor=risk_factor
-        ),
+        "status": _status(record, normalized_severity=severity),
+        "severity": severity,
         "title": _title(record),
     }
 

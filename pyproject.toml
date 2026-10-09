@@ -10,10 +10,10 @@ readme = "README.md"
 requires-python = ">=3.10"
 license = {file = "LICENSE"}
 authors = [{name = "Sahil Sandeep Mahadik"}]
-dependencies = []
+dependencies = ["defusedxml>=0.7.1"]
 
 [project.optional-dependencies]
-dev = ["pytest>=8.0"]
+dev = ["pytest>=8.0", "ruff>=0.6", "bandit>=1.7", "mypy>=1.11"]
 
 [project.scripts]
 ctm = "ctm_cli:main"
@@ -28,10 +28,16 @@ packages = [
     "ctm.decision",
     "ctm.reporting",
 ]
-
 py-modules = ["ctm_cli"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
 addopts = "-q"
+
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+
+[tool.bandit]
+exclude_dirs = ["tests"]

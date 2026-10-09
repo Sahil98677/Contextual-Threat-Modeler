@@ -3,7 +3,7 @@
 Status: Prepared for upload
 
 ### Changes
-- Added installation and first-run instructions for Windows, Linux, Kali Linux, and macOS
+- Added installation and first-run instructions for Windows, Linux, Kali Linux, and macO
 - Documented virtual environment setup and editable installation
 - Added examples for console, JSON, and HTML reporting
 - Added examples for analyzing existing Nuclei, Trivy, and Nessus exports

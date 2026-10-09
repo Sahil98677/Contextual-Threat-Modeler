@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import csv
-import xml.etree.ElementTree as ET
+from defusedxml import ElementTree as ET
 from pathlib import Path
 from typing import Any
 
@@ -39,7 +39,6 @@ class QualysXMLAdapter(ScannerAdapter):
         root = ET.parse(Path(path)).getroot()
         records = []
         elements = root.findall(".//VULN") or root.findall(".//Vulnerability")
-
         for vuln in elements:
             records.append({
                 "source": "qualys",
@@ -70,11 +69,7 @@ class QualysCSVAdapter(ScannerAdapter):
                     "qid": lowered.get("qid") or lowered.get("qid id") or "",
                     "title": lowered.get("title") or lowered.get("vulnerability") or "",
                     "severity": lowered.get("severity") or "",
-                    "cvss_v3": _float(
-                        lowered.get("cvss v3")
-                        or lowered.get("cvss v3 base")
-                        or lowered.get("cvss3 base score")
-                    ),
+                    "cvss_v3": _float(lowered.get("cvss v3") or lowered.get("cvss v3 base") or lowered.get("cvss3 base score")),
                     "cve": lowered.get("cve") or lowered.get("cve id") or "",
                     "category": lowered.get("category") or "",
                     "diagnosis": lowered.get("diagnosis") or "",

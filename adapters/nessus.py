@@ -1,7 +1,7 @@
 """Nessus .nessus XML scanner adapter."""
 from __future__ import annotations
 
-import xml.etree.ElementTree as ET
+from defusedxml import ElementTree as ET
 from pathlib import Path
 from typing import Any
 
@@ -26,7 +26,6 @@ class NessusAdapter(ScannerAdapter):
     def parse(self, path: str | Path) -> list[dict[str, Any]]:
         root = ET.parse(Path(path)).getroot()
         records = []
-
         for report_host in root.findall(".//ReportHost"):
             host = report_host.get("name", "unknown")
             for item in report_host.findall("ReportItem"):

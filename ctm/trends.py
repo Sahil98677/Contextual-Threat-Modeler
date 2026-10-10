@@ -60,7 +60,7 @@ def create_snapshot(
         counts[_risk_bucket(float(finding.score))] += 1
         grouped.setdefault(finding.asset_id, []).append(finding)
 
-    assets = []
+    assets: list[AssetSnapshot] = []
     for asset_id, findings in sorted(grouped.items()):
         asset_scores = [float(item.score) for item in findings]
         asset_counts = {name: 0 for name in counts}
@@ -185,7 +185,7 @@ def compare_snapshots(
         status = "STABLE"
 
     previous_assets = {item.asset_id: item for item in previous.assets}
-    assets = []
+    assets: list[dict[str, str | float | None]] = []
 
     for item in current.assets:
         old = previous_assets.get(item.asset_id)

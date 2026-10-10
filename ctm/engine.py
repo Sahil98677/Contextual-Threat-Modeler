@@ -1,3 +1,5 @@
+from typing import Any
+
 from .context.asset import build_asset
 from .decision.decision_engine import decide
 from .ingestion import load_inputs, normalize
@@ -22,7 +24,9 @@ def run(input_dir: str = "mock_inputs"):
         results.append(finding)
 
     correlated_paths = build_correlated_attack_paths(results, assets)
-    by_finding = {finding.id: [] for finding in results}
+    by_finding: dict[str, list[dict[str, Any]]] = {
+        finding.id: [] for finding in results
+    }
     for path in correlated_paths:
         for finding_id in path.finding_ids:
             by_finding.setdefault(finding_id, []).append(path.to_dict())

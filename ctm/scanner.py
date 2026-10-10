@@ -123,7 +123,7 @@ def _vulnerability(record: dict[str, Any], source: str) -> dict[str, Any]:
     severity = _normalized_severity(
         record.get("severity"), source=source, risk_factor=risk_factor
     )
-    value = {
+    value: dict[str, Any] = {
         "status": _status(record, normalized_severity=severity),
         "severity": severity,
         "title": _title(record),

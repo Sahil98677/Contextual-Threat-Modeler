@@ -3,9 +3,9 @@ from pathlib import Path
 
 from adapters.base import ScannerAdapter
 from adapters.generic_json import GenericJSONAdapter
+from adapters.nessus import NessusAdapter
 from adapters.nmap import NmapAdapter
 from adapters.nuclei import NucleiAdapter
-from adapters.nessus import NessusAdapter
 from adapters.qualys import QualysCSVAdapter, QualysXMLAdapter
 from adapters.registry import get_adapter, list_adapters
 from adapters.trivy import TrivyAdapter

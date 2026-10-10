@@ -2,11 +2,11 @@
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass, asdict
+from collections.abc import Iterable
+from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Iterable
-
+from typing import Any
 
 SNAPSHOT_PREFIX = "snapshot-"
 SNAPSHOT_SUFFIX = ".json"

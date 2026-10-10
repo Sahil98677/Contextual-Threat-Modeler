@@ -5,9 +5,9 @@ from pathlib import Path
 
 from .base import ScannerAdapter
 from .generic_json import GenericJSONAdapter
+from .nessus import NessusAdapter
 from .nmap import NmapAdapter
 from .nuclei import NucleiAdapter
-from .nessus import NessusAdapter
 from .qualys import QualysCSVAdapter, QualysXMLAdapter
 from .trivy import TrivyAdapter
 

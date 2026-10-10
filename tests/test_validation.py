@@ -1,7 +1,7 @@
-import json
+
 import pytest
 
-from ctm.ingestion import load_inputs, normalize, validate_inputs
+from ctm.ingestion import normalize, validate_inputs
 
 
 def test_duplicate_asset_id_is_rejected():

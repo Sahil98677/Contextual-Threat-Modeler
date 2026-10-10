@@ -1,6 +1,8 @@
 from pathlib import Path
+
 from adapters.registry import list_adapters, parse_export
 from ctm.scanner import normalize_scanner_records
+
 
 def test_registry_contains_all_scanner_adapters():
     adapters = list_adapters()

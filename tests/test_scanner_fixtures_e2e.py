@@ -4,7 +4,6 @@ import pytest
 
 from ctm.scanner_engine import run_scanner
 
-
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "mock_inputs" / "scanner_samples"
 

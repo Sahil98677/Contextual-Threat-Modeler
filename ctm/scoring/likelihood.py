@@ -1,6 +1,5 @@
 from ..context.exposure import exposure_factors
 
-
 STATUS_BONUS = {
     "discovered": 0.0,
     "suspected": 0.75,

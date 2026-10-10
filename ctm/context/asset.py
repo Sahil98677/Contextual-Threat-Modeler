@@ -2,7 +2,7 @@ from ..models import Asset
 from .values import as_bool
 
 
-def normalize_criticality(value: int | float) -> int:
+def normalize_criticality(value: float) -> int:
     return max(1, min(5, int(value)))
 
 

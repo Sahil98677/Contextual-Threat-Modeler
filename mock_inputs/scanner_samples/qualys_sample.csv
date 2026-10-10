@@ -1,0 +1,2 @@
+IP,QID,Title,Severity,CVE
+10.10.10.30,12345,Example Qualys Finding,4,CVE-2026-0003

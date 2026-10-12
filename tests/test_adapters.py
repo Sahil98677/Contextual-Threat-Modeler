@@ -56,6 +56,20 @@ def test_nuclei_adapter(tmp_path: Path):
     assert len(NucleiAdapter().parse(path)) == 2
 
 
+def test_nuclei_adapter_rejects_malformed_jsonl(tmp_path: Path):
+    path = tmp_path / "nuclei-bad.jsonl"
+    path.write_text(
+        '{"host":"example.test","severity":"high"}\n'
+        '{"host": "broken"\n',
+        encoding="utf-8",
+    )
+    try:
+        NucleiAdapter().parse(path)
+        raise AssertionError("Expected malformed JSONL to raise ValueError")
+    except ValueError:
+        pass
+
+
 def test_nmap_adapter(tmp_path: Path):
     path = tmp_path / "nmap.xml"
     path.write_text(

@@ -7,7 +7,7 @@ from typing import Any
 
 from defusedxml import ElementTree as ET
 
-from .base import ScannerAdapter
+from .base import ScannerAdapter, ensure_adapter_path
 
 
 def _child_text(element: ET.Element, *names: str) -> str:
@@ -62,7 +62,10 @@ class QualysXMLAdapter(ScannerAdapter):
     name = "qualys-xml"
 
     def parse(self, path: str | Path) -> list[dict[str, Any]]:
-        root = ET.parse(Path(path)).getroot()
+        file_path = ensure_adapter_path(path)
+        root = ET.parse(file_path).getroot()
+        if root is None:
+            return []
         records = []
         elements = root.findall(".//VULN") or root.findall(".//Vulnerability")
         parents = {child: parent for parent in root.iter() for child in parent}
@@ -87,9 +90,17 @@ class QualysCSVAdapter(ScannerAdapter):
     name = "qualys-csv"
 
     def parse(self, path: str | Path) -> list[dict[str, Any]]:
+        file_path = ensure_adapter_path(path)
         records = []
-        with Path(path).open("r", encoding="utf-8-sig", newline="") as handle:
-            for row in csv.DictReader(handle):
+        with file_path.open("r", encoding="utf-8-sig", newline="") as handle:
+            reader = csv.DictReader(handle)
+            if reader.fieldnames is None:
+                return []
+            for row_number, row in enumerate(reader, start=2):
+                if row is None:
+                    continue
+                if not isinstance(row, dict):
+                    raise TypeError(f"Qualys CSV row {row_number} is malformed")
                 lowered = {str(k).strip().lower(): v for k, v in row.items()}
                 records.append({
                     "source": "qualys",

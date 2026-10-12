@@ -5,20 +5,23 @@ import json
 from pathlib import Path
 from typing import Any
 
-from .base import ScannerAdapter
+from .base import ScannerAdapter, ensure_adapter_path, require_mapping
 
 
 class NucleiAdapter(ScannerAdapter):
     name = "nuclei"
 
     def parse(self, path: str | Path) -> list[dict[str, Any]]:
+        file_path = ensure_adapter_path(path)
         records = []
-        with Path(path).open("r", encoding="utf-8") as handle:
-            for line in handle:
-                line = line.strip()
-                if line:
-                    record = json.loads(line)
-                    if not isinstance(record, dict):
-                        raise TypeError("Each non-empty Nuclei JSONL line must contain an object")
-                    records.append(record)
+        with file_path.open("r", encoding="utf-8") as handle:
+            for line_number, line in enumerate(handle, start=1):
+                payload = line.strip()
+                if not payload:
+                    continue
+                try:
+                    record = json.loads(payload)
+                except json.JSONDecodeError as exc:
+                    raise ValueError(f"Invalid JSON at Nuclei line {line_number}: {exc.msg}") from exc
+                records.append(require_mapping(record, f"Nuclei record on line {line_number}"))
         return records

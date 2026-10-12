@@ -5,20 +5,22 @@ import json
 from pathlib import Path
 from typing import Any
 
-from .base import ScannerAdapter
+from .base import ScannerAdapter, ensure_adapter_path, require_mapping, require_list
 
 
 class GenericJSONAdapter(ScannerAdapter):
     name = "generic-json"
 
     def parse(self, path: str | Path) -> list[dict[str, Any]]:
-        with Path(path).open("r", encoding="utf-8") as handle:
+        file_path = ensure_adapter_path(path)
+        with file_path.open("r", encoding="utf-8") as handle:
             data = json.load(handle)
 
         if isinstance(data, list):
-            if not all(isinstance(item, dict) for item in data):
-                raise TypeError("Every record in a generic JSON array must be an object")
-            return data
+            records = require_list(data, "Generic JSON export")
+            for index, item in enumerate(records):
+                require_mapping(item, f"Generic JSON export record {index}")
+            return records
         if isinstance(data, dict):
-            return [data]
+            return [require_mapping(data, "Generic JSON export")]
         raise TypeError("Generic JSON export must contain an object or array")

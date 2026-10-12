@@ -247,6 +247,8 @@ The resulting score is capped at 100.
 
 Contextual factors include internet exposure, authentication requirements, DMZ placement, asset criticality, data classification, vulnerability severity, exploit availability, attack complexity, validation status, security controls, and secret exposure.
 
+The score is a heuristic prioritization aid, not a probability of exploitation or a substitute for organization-specific risk assessment. Review and tune the model for your environment before using its scores to drive operational decisions.
+
 ### Decision Model
 
 | Risk Score | Decision |
@@ -262,7 +264,21 @@ The project includes unit tests, scanner adapter tests, normalization tests, ris
 
 Synthetic fixtures are used for pipeline validation and do not represent real customer infrastructure or credentials.
 
+The CI workflow runs the test suite, Ruff, Bandit, and Mypy across Python 3.10, 3.11, and 3.12. To run the checks locally:
+
+```bash
+python -m pip install -e ".[dev]"
+python -m pytest -q
+python -m ruff check .
+python -m bandit -r ctm adapters -ll
+python -m mypy ctm adapters
+```
+
+Scanner exports are untrusted input. XML adapters use `defusedxml` to guard against unsafe XML constructs, and JSON-based adapters validate expected top-level and nested structures. Adapter format support is based on the documented scanner export shapes; validate representative exports from your scanner version before operational use.
+
 ## Current Status
+
+CTM is intended for internal security modeling, research, and assessment prioritization. It is decision support, not an autonomous production security control. Keep an analyst in the loop for critical findings and verify results against the source scanner and your organization's policies.
 
 ### Completed
 

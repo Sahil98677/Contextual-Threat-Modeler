@@ -70,6 +70,25 @@ def test_nmap_adapter(tmp_path: Path):
     assert records[0]["port"] == 443
 
 
+def test_nmap_adapter_ignores_malformed_ports_and_accepts_open_filtered(tmp_path: Path):
+    path = tmp_path / "nmap-mixed.xml"
+    path.write_text(
+        '<nmaprun><host><address addr="10.0.0.2"/>'
+        '<ports>'
+        '<port protocol="tcp" portid="not-a-number"><state state="open"/></port>'
+        '<port protocol="tcp" portid="80"><state state="open|filtered"/>'
+        '<service name="http"/></port>'
+        '<port protocol="udp" portid="53"><state state="closed"/></port>'
+        '</ports></host></nmaprun>',
+        encoding="utf-8",
+    )
+    records = NmapAdapter().parse(path)
+    assert len(records) == 1
+    assert records[0]["host"] == "10.0.0.2"
+    assert records[0]["port"] == 80
+    assert records[0]["service"] == "http"
+
+
 def test_trivy_adapter(tmp_path: Path):
     path = tmp_path / "trivy.json"
     path.write_text(json.dumps({

@@ -43,16 +43,27 @@ class NmapAdapter(ScannerAdapter):
 
             for port in host.findall("./ports/port"):
                 state = port.find("state")
-                service = port.find("service")
-                if state is None or state.get("state") != "open":
+                state_value = (state.get("state") if state is not None else "").lower()
+                if "open" not in state_value:
                     continue
 
+                port_id = port.get("portid")
+                try:
+                    port_number = int(str(port_id).strip())
+                except (TypeError, ValueError):
+                    continue
+
+                service = port.find("service")
                 findings.append({
                     "source": self.name,
                     "host": ip,
-                    "port": int(port.get("portid", 0)),
+                    "port": port_number,
                     "protocol": port.get("protocol", ""),
-                    "service": service.get("name") if service is not None else "unknown",
+                    "service": (
+                        service.get("name")
+                        if service is not None and service.get("name")
+                        else "unknown"
+                    ),
                 })
 
         return findings

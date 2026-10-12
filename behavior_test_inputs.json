@@ -1,0 +1,258 @@
+{
+  "description": "Synthetic CTM behavior-test inputs. Each scenario maps the six expected CTM input filenames to their JSON contents.",
+  "scenarios": {
+    "internal_low_impact_discovery": {
+      "assets.json": [
+        {
+          "id": "A1",
+          "name": "Internal app",
+          "criticality": 2,
+          "data_classification": "internal"
+        }
+      ],
+      "endpoints.json": [
+        {
+          "id": "F1",
+          "asset_id": "A1",
+          "method": "GET",
+          "path": "/search",
+          "type": "search",
+          "internet_facing": false,
+          "authentication_required": true,
+          "trust_zone": "internal"
+        }
+      ],
+      "header_data.json": [
+        {
+          "path": "/search",
+          "security_policy": "unknown"
+        }
+      ],
+      "secrets.json": [],
+      "vulnerabilities.json": [
+        {
+          "path": "/search",
+          "name": "Input anomaly",
+          "status": "discovered",
+          "exploit_available": false,
+          "attack_complexity": "high",
+          "impact": "low"
+        }
+      ],
+      "controls.json": []
+    },
+    "internet_facing_critical_confirmed_exploit": {
+      "assets.json": [
+        {
+          "id": "A1",
+          "name": "Production customer app",
+          "criticality": 5,
+          "data_classification": "restricted"
+        }
+      ],
+      "endpoints.json": [
+        {
+          "id": "F1",
+          "asset_id": "A1",
+          "method": "POST",
+          "path": "/upload",
+          "type": "file_upload",
+          "internet_facing": true,
+          "authentication_required": false,
+          "trust_zone": "DMZ"
+        }
+      ],
+      "header_data.json": [
+        {
+          "path": "/upload",
+          "security_policy": "unknown"
+        }
+      ],
+      "secrets.json": [],
+      "vulnerabilities.json": [
+        {
+          "path": "/upload",
+          "name": "Remote code execution",
+          "status": "confirmed",
+          "exploit_available": true,
+          "attack_complexity": "low",
+          "impact": "critical"
+        }
+      ],
+      "controls.json": []
+    },
+    "critical_finding_with_controls": {
+      "assets.json": [
+        {
+          "id": "A1",
+          "name": "Production customer app",
+          "criticality": 5,
+          "data_classification": "restricted"
+        }
+      ],
+      "endpoints.json": [
+        {
+          "id": "F1",
+          "asset_id": "A1",
+          "method": "POST",
+          "path": "/upload",
+          "type": "file_upload",
+          "internet_facing": true,
+          "authentication_required": false,
+          "trust_zone": "DMZ"
+        }
+      ],
+      "header_data.json": [
+        {
+          "path": "/upload",
+          "security_policy": "strong"
+        }
+      ],
+      "secrets.json": [],
+      "vulnerabilities.json": [
+        {
+          "path": "/upload",
+          "name": "Remote code execution",
+          "status": "confirmed",
+          "exploit_available": true,
+          "attack_complexity": "low",
+          "impact": "critical"
+        }
+      ],
+      "controls.json": [
+        {
+          "path": "/upload",
+          "waf": true,
+          "file_validation": true,
+          "av_scanning": true,
+          "mfa": true
+        }
+      ]
+    },
+    "discovered_secret_low_criticality_asset": {
+      "assets.json": [
+        {
+          "id": "A1",
+          "name": "Dev service",
+          "criticality": 1,
+          "data_classification": "internal"
+        }
+      ],
+      "endpoints.json": [
+        {
+          "id": "F1",
+          "asset_id": "A1",
+          "method": "GET",
+          "path": "/config",
+          "type": "config",
+          "internet_facing": false,
+          "authentication_required": true,
+          "trust_zone": "internal"
+        }
+      ],
+      "header_data.json": [
+        {
+          "path": "/config",
+          "security_policy": "unknown"
+        }
+      ],
+      "secrets.json": [
+        {
+          "path": "/config",
+          "secret_type": "api_key"
+        }
+      ],
+      "vulnerabilities.json": [
+        {
+          "path": "/config",
+          "name": "Possible credential leak",
+          "status": "discovered",
+          "exploit_available": false,
+          "attack_complexity": "high",
+          "impact": "low"
+        }
+      ],
+      "controls.json": []
+    },
+    "multi_finding_end_to_end": {
+      "assets.json": [
+        {
+          "id": "A1",
+          "name": "Critical production",
+          "criticality": 5,
+          "data_classification": "restricted"
+        },
+        {
+          "id": "A2",
+          "name": "Internal dev",
+          "criticality": 1,
+          "data_classification": "internal"
+        }
+      ],
+      "endpoints.json": [
+        {
+          "id": "LOW",
+          "asset_id": "A2",
+          "method": "GET",
+          "path": "/health",
+          "type": "health",
+          "internet_facing": false,
+          "authentication_required": true,
+          "trust_zone": "internal"
+        },
+        {
+          "id": "CRIT",
+          "asset_id": "A1",
+          "method": "POST",
+          "path": "/upload",
+          "type": "file_upload",
+          "internet_facing": true,
+          "authentication_required": false,
+          "trust_zone": "DMZ"
+        },
+        {
+          "id": "SECRET",
+          "asset_id": "A2",
+          "method": "GET",
+          "path": "/config",
+          "type": "config",
+          "internet_facing": false,
+          "authentication_required": true,
+          "trust_zone": "internal"
+        }
+      ],
+      "header_data.json": [],
+      "secrets.json": [
+        {
+          "path": "/config",
+          "secret_type": "api_key"
+        }
+      ],
+      "vulnerabilities.json": [
+        {
+          "path": "/upload",
+          "name": "RCE",
+          "status": "confirmed",
+          "exploit_available": true,
+          "attack_complexity": "low",
+          "impact": "critical"
+        },
+        {
+          "path": "/health",
+          "name": "Low issue",
+          "status": "discovered",
+          "exploit_available": false,
+          "attack_complexity": "high",
+          "impact": "low"
+        },
+        {
+          "path": "/config",
+          "name": "Potential credential leak",
+          "status": "discovered",
+          "impact": "low"
+        }
+      ],
+      "controls.json": []
+    }
+  }
+}

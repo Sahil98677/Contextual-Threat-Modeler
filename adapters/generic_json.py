@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from .base import ScannerAdapter, ensure_adapter_path, require_mapping, require_list
+from .base import ScannerAdapter, ensure_adapter_path, require_list, require_mapping
 
 
 class GenericJSONAdapter(ScannerAdapter):

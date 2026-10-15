@@ -4,7 +4,7 @@ from ctm.ingestion import normalize
 from ctm.models import Asset, Finding
 from ctm.scoring.confidence import calculate_confidence
 from ctm.scoring.risk import calculate_risk
-from ctm.verification import record_verification
+from ctm.verification import record_verification, verify_audit_trail
 
 
 def _finding() -> Finding:
@@ -177,3 +177,100 @@ def test_verified_rationale_requires_complete_record():
         "independent validation evidence" in reason
         for reason in finding.rationale
     )
+
+
+def test_audit_trail_records_status_transition_and_verifies():
+    finding = _finding()
+
+    record_verification(
+        finding,
+        reviewer_id="reviewer-001",
+        evidence_reference="SEC-REVIEW-201",
+        verified_at="2026-10-15T10:30:00+00:00",
+        decision="verified",
+        status="validated",
+    )
+
+    events = finding.evidence["verification_audit_trail"]
+
+    assert len(events) == 1
+    assert events[0]["previous_status"] == "confirmed"
+    assert events[0]["new_status"] == "validated"
+    assert events[0]["reviewer_id"] == "reviewer-001"
+    assert events[0]["previous_event_hash"] == ""
+    assert verify_audit_trail(events)
+
+
+def test_audit_trail_preserves_review_history_and_chains_events():
+    finding = _finding()
+
+    record_verification(
+        finding,
+        reviewer_id="reviewer-001",
+        evidence_reference="SEC-REVIEW-202",
+        verified_at="2026-10-15T10:30:00+00:00",
+        decision="verified",
+        status="validated",
+    )
+    first_event = finding.evidence["verification_audit_trail"][0].copy()
+
+    record_verification(
+        finding,
+        reviewer_id="reviewer-002",
+        evidence_reference="SEC-REVIEW-203",
+        verified_at="2026-10-15T11:00:00+00:00",
+        decision="rejected",
+    )
+
+    events = finding.evidence["verification_audit_trail"]
+
+    assert len(events) == 2
+    assert events[0] == first_event
+    assert events[1]["previous_event_hash"] == first_event["event_hash"]
+    assert events[1]["previous_status"] == "validated"
+    assert events[1]["new_status"] == "validated"
+    assert events[1]["decision"] == "rejected"
+    assert verify_audit_trail(events)
+
+
+def test_audit_trail_detects_event_tampering():
+    finding = _finding()
+
+    record_verification(
+        finding,
+        reviewer_id="reviewer-001",
+        evidence_reference="SEC-REVIEW-204",
+        verified_at="2026-10-15T10:30:00+00:00",
+        decision="verified",
+    )
+
+    events = finding.evidence["verification_audit_trail"]
+    events[0]["reviewer_id"] = "forged-reviewer"
+
+    assert not verify_audit_trail(events)
+
+
+def test_tampered_audit_trail_blocks_further_reviews():
+    finding = _finding()
+
+    record_verification(
+        finding,
+        reviewer_id="reviewer-001",
+        evidence_reference="SEC-REVIEW-205",
+        verified_at="2026-10-15T10:30:00+00:00",
+        decision="verified",
+    )
+
+    finding.evidence["verification_audit_trail"][0]["decision"] = "rejected"
+    original_status = finding.vulnerability["status"]
+
+    with pytest.raises(ValueError, match="audit trail is invalid"):
+        record_verification(
+            finding,
+            reviewer_id="reviewer-002",
+            evidence_reference="SEC-REVIEW-206",
+            verified_at="2026-10-15T11:00:00+00:00",
+            decision="verified",
+        )
+
+    assert finding.vulnerability["status"] == original_status

@@ -49,6 +49,26 @@ def test_sarif_report_contains_prioritized_findings(sample_results):
         assert result["locations"][0]["physicalLocation"]["artifactLocation"]["uri"]
 
 
+def test_sarif_report_is_deterministic_and_sorted_by_finding_id(sample_results):
+    first = json.loads(render_sarif(sample_results))
+    second = json.loads(render_sarif(list(reversed(sample_results))))
+
+    assert first == second
+    finding_ids = [
+        result["properties"]["findingId"]
+        for result in first["runs"][0]["results"]
+    ]
+    assert finding_ids == sorted(finding_ids)
+
+
+def test_sarif_report_handles_empty_results():
+    payload = json.loads(render_sarif([]))
+
+    assert payload["version"] == "2.1.0"
+    assert payload["runs"][0]["results"] == []
+    assert payload["runs"][0]["tool"]["driver"]["rules"] == []
+
+
 def test_remediation_plan_uses_decision_order_and_cwe_guidance(sample_results):
     plan = build_remediation_plan(sample_results)
     priorities = [item["priority"] for item in plan]

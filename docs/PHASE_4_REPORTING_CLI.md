@@ -116,3 +116,7 @@ The CLI does not automatically exploit targets, bypass authentication, or perfor
 Reporting tests cover JSON schema validation, SARIF output and CLI file writing,
 HTML/console recommendations, empty reports, scanner-source selection, and
 invalid CLI combinations.
+
+The package CI job also validates a SARIF report generated from the installed
+wheel with Microsoft's independent SARIF Multitool. This supplements CTM's
+internal contract schema checks with an independent SARIF 2.1.0 validator.

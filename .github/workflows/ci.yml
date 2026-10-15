@@ -60,6 +60,11 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Set up Node.js for independent SARIF validation
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
       - name: Build source and wheel distributions
         run: |
           python -m pip install --upgrade pip build
@@ -76,3 +81,6 @@ jobs:
             --format sarif > "$RUNNER_TEMP/ctm-report.sarif"
           "$RUNNER_TEMP/ctm-wheel-venv/bin/python" -c \
             "import json, pathlib; report=json.loads(pathlib.Path('$RUNNER_TEMP/ctm-report.sarif').read_text()); assert report['version'] == '2.1.0'; assert report['runs'][0]['results']"
+
+      - name: Validate SARIF with Microsoft SARIF Multitool
+        run: npx --yes @microsoft/sarif-multitool validate "$RUNNER_TEMP/ctm-report.sarif"

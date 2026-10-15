@@ -72,6 +72,17 @@ def _data_classification(value: Any) -> str:
     return normalized if normalized in allowed else "unknown"
 
 
+def _tags(value: Any) -> list[str]:
+    """Keep only non-empty string tags from untrusted scanner input."""
+    if not isinstance(value, (list, tuple)):
+        return []
+    return [
+        tag.strip()
+        for tag in value
+        if isinstance(tag, str) and tag.strip()
+    ]
+
+
 def _status(record: dict[str, Any], normalized_severity: str | None = None) -> str:
     """Derive status from explicit status or canonical, source-normalized severity."""
     explicit = str(record.get("status", "")).strip().lower()
@@ -206,9 +217,7 @@ def normalize_scanner_records(
                 ),
                 "production": _as_bool(record.get("production", True), True),
                 "owner": str(record.get("owner", "")),
-                "tags": list(record.get("tags", []))
-                if isinstance(record.get("tags", []), (list, tuple))
-                else [],
+                "tags": _tags(record.get("tags", [])),
             },
         )
 

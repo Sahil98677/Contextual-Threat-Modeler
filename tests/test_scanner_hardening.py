@@ -99,6 +99,36 @@ def test_missing_data_classification_keeps_internal_default():
     assert asset["data_classification"] == "internal"
 
 
+def test_mixed_asset_tags_keep_only_non_empty_strings():
+    data = normalize_scanner_records(
+        [{
+            "host": "api",
+            "tags": [
+                " internet-facing ",
+                123,
+                None,
+                "",
+                "production",
+                {"tag": "admin"},
+            ],
+        }],
+        "generic-json",
+    )
+
+    asset = next(iter(data["assets"].values()))
+    assert asset["tags"] == ["internet-facing", "production"]
+
+
+def test_tuple_asset_tags_are_normalized():
+    data = normalize_scanner_records(
+        [{"host": "api", "tags": ("security", "", "critical")}],
+        "generic-json",
+    )
+
+    asset = next(iter(data["assets"].values()))
+    assert asset["tags"] == ["security", "critical"]
+
+
 def test_severity_is_normalized_and_status_preserved():
     data = normalize_scanner_records(
         [{"host": "api", "severity": "Moderate"}], "qualys"

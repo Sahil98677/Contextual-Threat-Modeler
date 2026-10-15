@@ -45,6 +45,9 @@ addopts = "-q"
 target-version = "py310"
 line-length = 100
 
+[tool.mypy]
+exclude = ["build", ".venv"]
+
 [tool.bandit]
 exclude_dirs = ["tests"]
 

@@ -1,6 +1,7 @@
 """Shared normalization helpers for untrusted input values."""
 from __future__ import annotations
 
+import math
 from typing import Any
 
 
@@ -11,6 +12,8 @@ def as_bool(value: Any, default: bool = False) -> bool:
     if isinstance(value, bool):
         return value
     if isinstance(value, (int, float)):
+        if isinstance(value, float) and not math.isfinite(value):
+            return default
         return value != 0
     if isinstance(value, str):
         normalized = value.strip().lower()
@@ -26,6 +29,8 @@ def as_optional_bool(value: Any) -> bool | None:
     if value is None:
         return None
     if isinstance(value, (bool, int, float)):
+        if isinstance(value, float) and not math.isfinite(value):
+            return None
         return as_bool(value)
     if isinstance(value, str) and value.strip().lower() in {
         "true",

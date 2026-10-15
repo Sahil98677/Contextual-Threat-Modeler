@@ -6,8 +6,7 @@ from .ingestion import load_inputs, normalize
 from .models import Finding
 from .scoring.risk import calculate_risk
 from .threat.attack_paths import build_correlated_attack_paths
-from .threat.mitre import map_mitre
-from .threat.stride import map_stride
+from .threat.mapping import apply_threat_mappings
 
 
 def run(input_dir: str = "mock_inputs"):
@@ -17,8 +16,7 @@ def run(input_dir: str = "mock_inputs"):
     for raw in data["findings"]:
         finding = Finding(**raw)
         asset = assets.get(finding.asset_id, build_asset({"id": finding.asset_id, "name": finding.asset_id}))
-        finding.threats = map_stride(finding.endpoint_type)
-        finding.attack_techniques = map_mitre(finding.endpoint_type, finding.exposure.get("internet_facing", False), finding.vulnerability)
+        apply_threat_mappings(finding)
         calculate_risk(finding, asset)
         finding.decision = decide(finding.score, finding.confidence)
         results.append(finding)

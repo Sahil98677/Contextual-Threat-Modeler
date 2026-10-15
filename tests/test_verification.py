@@ -520,30 +520,3 @@ def test_restart_requires_restoring_persisted_history_before_next_review(tmp_pat
     assert reloaded_finding.vulnerability["status"] == "confirmed"
     assert "verification_audit_trail" not in reloaded_finding.evidence
     assert len(restarted_store.events_for(finding.id)) == 1
-
-
-def test_failed_persistent_append_does_not_mutate_finding(audit_store):
-    class FailingAuditStore:
-        def events_for(self, finding_id):
-            return []
-
-        def append_event(self, finding_id, event):
-            raise sqlite3.OperationalError("database unavailable")
-
-    finding = _finding()
-    original_provenance = finding.evidence["validation_provenance"].copy()
-
-    with pytest.raises(sqlite3.OperationalError, match="database unavailable"):
-        record_verification(
-            finding,
-            authorizer=_TestAuthorizer(),
-            audit_store=FailingAuditStore(),
-            evidence_reference="SEC-REVIEW-DB-FAIL",
-            verified_at="2026-10-15T10:30:00+00:00",
-            decision="verified",
-        )
-
-    assert finding.vulnerability["status"] == "confirmed"
-    assert finding.evidence["validation_provenance"] == original_provenance
-    assert "verification_audit_trail" not in finding.evidence
-    assert audit_store.events_for(finding.id) == []

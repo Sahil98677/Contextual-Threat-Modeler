@@ -2,6 +2,7 @@ import html
 
 from ..decision.decision_engine import risk_level
 from ..scanner_validation import summarize_findings
+from .remediation import build_remediation_plan
 
 
 def _list(value, empty="None"):
@@ -85,9 +86,13 @@ def _trend_section(trend):
 def render_html(results, trend=None) -> str:
     results = list(results)
     summary = summarize_findings(results)
+    remediation = {
+        item["finding_id"]: item for item in build_remediation_plan(results)
+    }
 
     cards = []
     for finding in results:
+        recommendation = remediation[finding.id]
         cards.append(
             f"""
             <section class="finding">
@@ -106,6 +111,8 @@ def render_html(results, trend=None) -> str:
               <p><strong>STRIDE:</strong> {_list(finding.threats)}</p>
               <p><strong>ATT&CK:</strong> {_list(finding.attack_techniques)}</p>
               <p><strong>Why:</strong> {html.escape(" ".join(finding.rationale) or "No additional rationale.")}</p>
+              <p><strong>Remediation priority:</strong> {html.escape(recommendation["priority"])}</p>
+              <p><strong>Recommended action:</strong> {html.escape(recommendation["action"])}</p>
             </section>
             """
         )

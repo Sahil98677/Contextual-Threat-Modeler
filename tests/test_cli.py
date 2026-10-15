@@ -48,3 +48,25 @@ def test_scanner_export_cli_emits_risk_analyzed_json(tmp_path, monkeypatch, caps
         "INVESTIGATE",
         "MONITOR",
     }
+
+
+def test_sarif_report_can_be_written_to_file(tmp_path, monkeypatch):
+    output_path = tmp_path / "report.sarif"
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "ctm",
+            "--input-dir",
+            "mock_inputs",
+            "--format",
+            "sarif",
+            "--output",
+            str(output_path),
+        ],
+    )
+
+    assert main() == 0
+
+    report = json.loads(output_path.read_text(encoding="utf-8"))
+    assert report["version"] == "2.1.0"
+    assert report["runs"][0]["results"]

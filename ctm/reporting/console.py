@@ -1,8 +1,12 @@
 from ..decision.decision_engine import risk_level
+from .remediation import build_remediation_plan
 
 
 def render_console(results, trend=None) -> str:
     results = list(results)
+    remediation = {
+        item["finding_id"]: item for item in build_remediation_plan(results)
+    }
     paths = []
     seen = set()
     lines = ["", "=" * 78, "              CTM SECURITY DECISION ENGINE v1.0", "=" * 78]
@@ -18,6 +22,7 @@ def render_console(results, trend=None) -> str:
             f"  ATT&CK: {', '.join(finding.attack_techniques) or 'No direct mapping'}",
             f"  Attack paths: {len(finding.attack_paths)}",
             "  Why: " + (" ".join(finding.rationale[:3]) or "No additional rationale."),
+            f"  Remediation: {remediation[finding.id]['priority']} - {remediation[finding.id]['action']}",
         ])
     if paths:
         lines.extend(["", "ATTACK PATHS", "-" * 78])

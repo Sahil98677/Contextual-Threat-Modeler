@@ -5,6 +5,7 @@ from ctm.engine import run
 from ctm.reporting.console import render_console
 from ctm.reporting.html_report import render_html
 from ctm.reporting.json_report import render_json
+from ctm.reporting.sarif_report import render_sarif
 from ctm.scanner_engine import run_scanner
 from ctm.trends import build_trend
 
@@ -27,8 +28,8 @@ def main() -> int:
     source.add_argument("--input-dir", default="mock_inputs", help="Directory containing CTM JSON input files (default: mock_inputs)")
     source.add_argument("--export", help="Existing scanner export to analyze")
     parser.add_argument("--scanner", choices=SCANNERS, help="Scanner format used by --export")
-    parser.add_argument("--format", choices=("console", "json", "html"), default="console", help="Report format (default: console)")
-    parser.add_argument("--output", help="Write JSON/HTML report to a file instead of stdout")
+    parser.add_argument("--format", choices=("console", "json", "html", "sarif"), default="console", help="Report format (default: console)")
+    parser.add_argument("--output", help="Write JSON/HTML/SARIF report to a file instead of stdout")
     parser.add_argument("--history-dir", help="Persist a risk snapshot and compare it with the previous run")
     args = parser.parse_args()
 
@@ -37,7 +38,7 @@ def main() -> int:
     if args.scanner and not args.export:
         parser.error("--scanner requires --export")
     if args.output and args.format == "console":
-        parser.error("--output is only valid with --format json or --format html")
+        parser.error("--output is only valid with --format json, html, or sarif")
 
     results = run_scanner(args.scanner, args.export) if args.export else run(args.input_dir)
 
@@ -52,7 +53,11 @@ def main() -> int:
     content = (
         render_json(results, trend=trend)
         if args.format == "json"
-        else render_html(results, trend=trend)
+        else (
+            render_html(results, trend=trend)
+            if args.format == "html"
+            else render_sarif(results)
+        )
     )
     if args.output:
         Path(args.output).write_text(content, encoding="utf-8")

@@ -15,7 +15,7 @@ Scanner export
       ↓
 Decision Engine
       ↓
-Console / JSON / HTML
+Console / JSON / HTML / SARIF
 ```
 
 ### Primary commands
@@ -32,7 +32,7 @@ Analyze a scanner export:
 ctm --scanner nuclei --export nuclei_results.jsonl
 ```
 
-Write JSON:
+Write schema-validated JSON:
 
 ```bash
 ctm --scanner nuclei --export nuclei_results.jsonl --format json --output report.json
@@ -42,6 +42,12 @@ Write HTML:
 
 ```bash
 ctm --scanner nuclei --export nuclei_results.jsonl --format html --output report.html
+```
+
+Write SARIF 2.1.0 for code-scanning integrations:
+
+```bash
+ctm --scanner nuclei --export nuclei_results.jsonl --format sarif --output report.sarif
 ```
 
 Supported scanner identifiers:
@@ -69,8 +75,29 @@ JSON now contains a small report envelope with:
 - finding count
 - risk/decision summary
 - complete finding records
+- a priority-ordered remediation plan
 
-This makes the output easier for CI/CD, automation, and downstream integrations to consume without changing the underlying finding model.
+The generated payload is validated against CTM's JSON Schema before it is
+returned. Validation failures are surfaced to the caller. This makes the output
+easier for CI/CD and downstream integrations to consume without changing the
+underlying finding model.
+
+### SARIF
+
+SARIF output uses version 2.1.0 and includes finding locations, risk-derived
+result levels, rule identifiers (CWE identifiers when present), CTM scores,
+decisions, priorities, remediation guidance, and contextual rationale. The
+output is validated against the supported CTM SARIF contract. Locations refer
+to finding endpoint paths; they are not source-code locations unless a scanner
+supplied such a path.
+
+### Remediation guidance
+
+Console, HTML, JSON, and SARIF reports share decision-derived priorities: P1
+for immediate testing, P2 for prioritized validation, P3 for investigation,
+and P4 for monitoring. CWE-specific suggestions are qualified as conditional
+on confirmation; they do not claim exploitability. Priorities are workflow
+guidance and do not add risk-score weights.
 
 ### HTML
 
@@ -86,4 +113,6 @@ The CLI does not automatically exploit targets, bypass authentication, or perfor
 
 ## Validation
 
-Phase 4 adds regression coverage for JSON/HTML reporting, empty reports, scanner-source selection, and invalid CLI combinations.
+Reporting tests cover JSON schema validation, SARIF output and CLI file writing,
+HTML/console recommendations, empty reports, scanner-source selection, and
+invalid CLI combinations.

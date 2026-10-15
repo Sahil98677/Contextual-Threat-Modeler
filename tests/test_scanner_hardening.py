@@ -22,6 +22,26 @@ def test_string_false_is_not_true():
     assert asset["production"] is False
 
 
+def test_non_finite_exploit_evidence_defaults_to_false():
+    for value in (float("nan"), float("inf"), float("-inf")):
+        data = normalize_scanner_records(
+            [{"host": "api", "exploit_available": value}],
+            "generic-json",
+        )
+        finding = data["findings"][0]
+        assert finding["vulnerability"]["exploit_available"] is False
+
+
+def test_finite_numeric_exploit_evidence_is_preserved():
+    for value, expected in ((1, True), (0, False)):
+        data = normalize_scanner_records(
+            [{"host": "api", "exploit_available": value}],
+            "generic-json",
+        )
+        finding = data["findings"][0]
+        assert finding["vulnerability"]["exploit_available"] is expected
+
+
 def test_numeric_criticality_is_clamped_to_one_to_five():
     low = normalize_scanner_records(
         [{"host": "low", "criticality": 0}], "trivy"

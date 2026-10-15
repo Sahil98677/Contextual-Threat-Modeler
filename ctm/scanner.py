@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import hashlib
+import math
 import re
 from typing import Any
 
@@ -41,6 +42,8 @@ def _as_bool(value: Any, default: bool = False) -> bool:
     if isinstance(value, bool):
         return value
     if isinstance(value, (int, float)):
+        if isinstance(value, float) and not math.isfinite(value):
+            return default
         return value != 0
     if isinstance(value, str):
         normalized = value.strip().lower()

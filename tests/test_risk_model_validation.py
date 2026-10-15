@@ -2,6 +2,7 @@ from typing import Any
 
 import pytest
 
+from ctm.decision.decision_engine import risk_level
 from ctm.models import Asset, Finding
 from ctm.scoring.risk import calculate_risk
 
@@ -161,3 +162,76 @@ def test_higher_exposure_context_does_not_lower_risk_score(
     changed_score = _score(changed)
 
     assert changed_score > baseline_score
+
+
+def test_synthetic_risk_ranking_matrix() -> None:
+    low = Finding(
+        id="LOW",
+        asset_id="A-LOW",
+        method="GET",
+        path="/health",
+        endpoint_type="api",
+        exposure={
+            "internet_facing": False,
+            "authentication_required": True,
+            "trust_zone": "internal",
+        },
+        vulnerability={
+            "status": "discovered",
+            "impact": "low",
+            "exploit_available": False,
+            "attack_complexity": "high",
+        },
+    )
+    uncertain = _validation_finding()
+    critical = Finding(
+        id="CRITICAL",
+        asset_id="A-CRITICAL",
+        method="POST",
+        path="/api/upload",
+        endpoint_type="api",
+        exposure={
+            "internet_facing": True,
+            "authentication_required": False,
+            "trust_zone": "DMZ",
+        },
+        vulnerability={
+            "status": "confirmed",
+            "impact": "critical",
+            "exploit_available": True,
+            "attack_complexity": "low",
+            "cwe": "CWE-89",
+        },
+    )
+
+    low_asset = Asset(
+        id="A-LOW",
+        name="Internal health service",
+        criticality=1,
+        data_classification="internal",
+    )
+    uncertain_asset = Asset(
+        id="A-VALIDATION",
+        name="Context not fully assessed",
+        criticality=3,
+        data_classification="internal",
+    )
+    critical_asset = Asset(
+        id="A-CRITICAL",
+        name="Critical production service",
+        criticality=5,
+        data_classification="restricted",
+    )
+
+    calculate_risk(low, low_asset)
+    calculate_risk(uncertain, uncertain_asset)
+    calculate_risk(critical, critical_asset)
+
+    assert low.score < uncertain.score < critical.score
+    assert risk_level(low.score) == "LOW"
+    assert risk_level(critical.score) == "CRITICAL"
+    assert any("unknown" in reason.lower() for reason in uncertain.rationale)
+    assert any(
+        "exploit is reported as available" in reason
+        for reason in critical.rationale
+    )

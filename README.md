@@ -306,16 +306,15 @@ CTM is intended for internal security modeling, research, and assessment priorit
 
 ### Roadmap
 
-- API interface
-- Web-based CTM dashboard
-- Additional threat-intelligence enrichment
-- Expanded historical analytics
+See the [CTM project milestone roadmap](docs/ROADMAP.md) for completed
+foundations, upcoming work, dependencies, and milestone exit criteria.
 
 ## Documentation
 
 Detailed documentation is maintained under `docs/`. Key documentation covers CTM architecture, the scanner pipeline, validation and reporting, hardening, attack-path correlation, risk trend analysis, and the project changelog.
 
-Development milestones are tracked in `docs/CTM_CHANGELOG.md`.
+Development history is tracked in `docs/CTM_CHANGELOG.md`; planned work and
+milestone status are tracked in [docs/ROADMAP.md](docs/ROADMAP.md).
 
 - [Contributing to CTM](CONTRIBUTING.md) — development setup, testing, and pull request guidelines.
 

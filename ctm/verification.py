@@ -1,11 +1,25 @@
 import hashlib
 import json
 from datetime import datetime
-from typing import Any
+from typing import Any, Protocol
+
+from ctm.models import Finding
 
 VALID_STATUSES = {"validated", "confirmed"}
 VALID_DECISIONS = {"verified", "rejected"}
 AUDIT_TRAIL_KEY = "verification_audit_trail"
+VERIFICATION_PERMISSIONS = {
+    "verified": "finding:verify",
+    "rejected": "finding:reject",
+}
+
+
+class VerificationAuthorizer(Protocol):
+    """Trusted adapter to the application's authenticated identity and ACL."""
+
+    def authorize(self, finding_id: str, permission: str) -> str:
+        """Authorize an action and return its authenticated reviewer subject."""
+        ...
 
 
 def _valid_timestamp(value: Any) -> bool:
@@ -87,9 +101,9 @@ def verify_audit_trail(events: Any) -> bool:
 
 
 def record_verification(
-    finding,
+    finding: Finding,
     *,
-    reviewer_id: str,
+    authorizer: VerificationAuthorizer,
     evidence_reference: str,
     verified_at: str,
     decision: str,
@@ -97,16 +111,14 @@ def record_verification(
 ) -> None:
     """Record a review result on a CTM finding.
 
-    reviewer_id must be supplied by a trusted caller after authentication and
-    authorization. This function does not authenticate the reviewer itself.
+    The authorizer must be supplied by trusted application code. It must resolve
+    the authenticated identity and enforce the requested decision permission.
+    This operation does not itself authenticate the reviewer.
     Evidence references should point to controlled records, not contain secrets.
 
     The trail is tamper-evident, not immutable storage. Production deployments
     should also persist events to access-controlled, append-only storage.
     """
-    if not isinstance(reviewer_id, str) or not reviewer_id.strip():
-        raise ValueError("reviewer_id must be a non-empty string")
-
     if not isinstance(evidence_reference, str) or not evidence_reference.strip():
         raise ValueError("evidence_reference must be a non-empty string")
 
@@ -120,6 +132,13 @@ def record_verification(
         not isinstance(status, str) or status not in VALID_STATUSES
     ):
         raise ValueError("verified status must be 'validated' or 'confirmed'")
+
+    reviewer_id = authorizer.authorize(
+        finding.id,
+        VERIFICATION_PERMISSIONS[decision],
+    )
+    if not isinstance(reviewer_id, str) or not reviewer_id.strip():
+        raise PermissionError("authorizer did not provide an authenticated reviewer")
 
     audit_trail = finding.evidence.get(AUDIT_TRAIL_KEY, [])
     if not isinstance(audit_trail, list) or not verify_audit_trail(audit_trail):

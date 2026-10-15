@@ -1,3 +1,5 @@
+import inspect
+
 import pytest
 
 from ctm.ingestion import normalize
@@ -5,6 +7,26 @@ from ctm.models import Asset, Finding
 from ctm.scoring.confidence import calculate_confidence
 from ctm.scoring.risk import calculate_risk
 from ctm.verification import record_verification, verify_audit_trail
+
+
+class _TestAuthorizer:
+    def __init__(
+        self,
+        reviewer_id: str = "reviewer-001",
+        permissions: set[str] | None = None,
+    ) -> None:
+        self.reviewer_id = reviewer_id
+        self.permissions = permissions if permissions is not None else {
+            "finding:verify",
+            "finding:reject",
+        }
+        self.requests: list[tuple[str, str]] = []
+
+    def authorize(self, finding_id: str, permission: str) -> str:
+        self.requests.append((finding_id, permission))
+        if permission not in self.permissions:
+            raise PermissionError("reviewer is not authorized")
+        return self.reviewer_id
 
 
 def _finding() -> Finding:
@@ -60,12 +82,87 @@ def test_json_ingestion_marks_status_unverified():
     assert calculate_confidence(Finding(**finding)) == 0.60
 
 
+@pytest.mark.parametrize(
+    ("decision", "permission"),
+    [
+        ("verified", "finding:verify"),
+        ("rejected", "finding:reject"),
+    ],
+)
+def test_verification_requires_decision_specific_permission(
+    decision: str,
+    permission: str,
+) -> None:
+    finding = _finding()
+    authorizer = _TestAuthorizer(permissions=set())
+    original_status = finding.vulnerability["status"]
+    original_provenance = finding.evidence["validation_provenance"].copy()
+
+    with pytest.raises(PermissionError, match="not authorized"):
+        record_verification(
+            finding,
+            authorizer=authorizer,
+            evidence_reference="SEC-REVIEW-AUTH",
+            verified_at="2026-10-15T10:30:00+00:00",
+            decision=decision,
+        )
+
+    assert authorizer.requests == [(finding.id, permission)]
+    assert finding.vulnerability["status"] == original_status
+    assert finding.evidence["validation_provenance"] == original_provenance
+    assert "verification_audit_trail" not in finding.evidence
+
+
+def test_authenticated_reviewer_identity_is_used_for_attribution():
+    finding = _finding()
+    authorizer = _TestAuthorizer("authenticated-reviewer")
+
+    record_verification(
+        finding,
+        authorizer=authorizer,
+        evidence_reference="SEC-REVIEW-AUTHORIZED",
+        verified_at="2026-10-15T10:30:00+00:00",
+        decision="verified",
+    )
+
+    assert (
+        finding.evidence["validation_provenance"]["reviewer_id"]
+        == "authenticated-reviewer"
+    )
+    assert (
+        finding.evidence["verification_audit_trail"][0]["reviewer_id"]
+        == "authenticated-reviewer"
+    )
+
+
+def test_authorizer_must_return_a_non_empty_reviewer_identity():
+    finding = _finding()
+
+    with pytest.raises(PermissionError, match="authenticated reviewer"):
+        record_verification(
+            finding,
+            authorizer=_TestAuthorizer(" "),
+            evidence_reference="SEC-REVIEW-AUTHORIZED",
+            verified_at="2026-10-15T10:30:00+00:00",
+            decision="verified",
+        )
+
+    assert finding.vulnerability["status"] == "confirmed"
+    assert "verification_audit_trail" not in finding.evidence
+
+
+def test_reviewer_id_is_not_a_record_verification_parameter():
+    assert "reviewer_id" not in inspect.signature(
+        record_verification
+    ).parameters
+
+
 def test_controlled_verification_records_audit_fields():
     finding = _finding()
 
     record_verification(
         finding,
-        reviewer_id="reviewer-001",
+        authorizer=_TestAuthorizer(),
         evidence_reference="SEC-REVIEW-123",
         verified_at="2026-10-15T10:30:00+00:00",
         decision="verified",
@@ -87,7 +184,7 @@ def test_verified_status_can_be_set_to_validated():
 
     record_verification(
         finding,
-        reviewer_id="reviewer-001",
+        authorizer=_TestAuthorizer(),
         evidence_reference="SEC-REVIEW-124",
         verified_at="2026-10-15T10:30:00Z",
         decision="verified",
@@ -103,7 +200,7 @@ def test_rejected_review_does_not_elevate_confidence():
 
     record_verification(
         finding,
-        reviewer_id="reviewer-001",
+        authorizer=_TestAuthorizer(),
         evidence_reference="SEC-REVIEW-125",
         verified_at="2026-10-15T10:30:00+00:00",
         decision="rejected",
@@ -117,7 +214,6 @@ def test_rejected_review_does_not_elevate_confidence():
 @pytest.mark.parametrize(
     ("field", "value"),
     [
-        ("reviewer_id", ""),
         ("evidence_reference", ""),
         ("verified_at", "not-a-timestamp"),
         ("verified_at", "2026-10-15T10:30:00"),
@@ -128,7 +224,7 @@ def test_rejected_review_does_not_elevate_confidence():
 def test_invalid_verification_is_rejected(field, value):
     finding = _finding()
     args = {
-        "reviewer_id": "reviewer-001",
+        "authorizer": _TestAuthorizer(),
         "evidence_reference": "SEC-REVIEW-126",
         "verified_at": "2026-10-15T10:30:00+00:00",
         "decision": "verified",
@@ -165,7 +261,7 @@ def test_verified_rationale_requires_complete_record():
 
     record_verification(
         finding,
-        reviewer_id="reviewer-001",
+        authorizer=_TestAuthorizer(),
         evidence_reference="SEC-REVIEW-127",
         verified_at="2026-10-15T10:30:00+00:00",
         decision="verified",
@@ -184,7 +280,7 @@ def test_audit_trail_records_status_transition_and_verifies():
 
     record_verification(
         finding,
-        reviewer_id="reviewer-001",
+        authorizer=_TestAuthorizer(),
         evidence_reference="SEC-REVIEW-201",
         verified_at="2026-10-15T10:30:00+00:00",
         decision="verified",
@@ -206,7 +302,7 @@ def test_audit_trail_preserves_review_history_and_chains_events():
 
     record_verification(
         finding,
-        reviewer_id="reviewer-001",
+        authorizer=_TestAuthorizer(),
         evidence_reference="SEC-REVIEW-202",
         verified_at="2026-10-15T10:30:00+00:00",
         decision="verified",
@@ -216,7 +312,7 @@ def test_audit_trail_preserves_review_history_and_chains_events():
 
     record_verification(
         finding,
-        reviewer_id="reviewer-002",
+        authorizer=_TestAuthorizer("reviewer-002"),
         evidence_reference="SEC-REVIEW-203",
         verified_at="2026-10-15T11:00:00+00:00",
         decision="rejected",
@@ -238,7 +334,7 @@ def test_audit_trail_detects_event_tampering():
 
     record_verification(
         finding,
-        reviewer_id="reviewer-001",
+        authorizer=_TestAuthorizer(),
         evidence_reference="SEC-REVIEW-204",
         verified_at="2026-10-15T10:30:00+00:00",
         decision="verified",
@@ -255,7 +351,7 @@ def test_tampered_audit_trail_blocks_further_reviews():
 
     record_verification(
         finding,
-        reviewer_id="reviewer-001",
+        authorizer=_TestAuthorizer(),
         evidence_reference="SEC-REVIEW-205",
         verified_at="2026-10-15T10:30:00+00:00",
         decision="verified",
@@ -267,7 +363,7 @@ def test_tampered_audit_trail_blocks_further_reviews():
     with pytest.raises(ValueError, match="audit trail is invalid"):
         record_verification(
             finding,
-            reviewer_id="reviewer-002",
+            authorizer=_TestAuthorizer("reviewer-002"),
             evidence_reference="SEC-REVIEW-206",
             verified_at="2026-10-15T11:00:00+00:00",
             decision="verified",

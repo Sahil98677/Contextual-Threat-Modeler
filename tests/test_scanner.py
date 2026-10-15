@@ -20,7 +20,7 @@ def test_scanner_record_becomes_ctm_finding():
     finding = data["findings"][0]
     assert len(data["assets"]) == 1
     assert finding["path"] == "/api/users"
-    assert finding["vulnerability"]["status"] == "validated"
+    assert finding["vulnerability"]["status"] == "discovered"
     assert finding["vulnerability"]["cve"] == "CVE-2026-0001"
     assert finding["exposure"]["internet_facing"] is True
 

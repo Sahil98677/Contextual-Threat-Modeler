@@ -11,7 +11,7 @@ def test_nessus_numeric_severity_and_risk_factor_are_preserved():
     }
     finding = normalize_scanner_records([record], "nessus")["findings"][0]
     assert finding["vulnerability"]["severity"] == "high"
-    assert finding["vulnerability"]["status"] == "validated"
+    assert finding["vulnerability"]["status"] == "discovered"
     assert finding["vulnerability"]["risk_factor"] == "High"
 
 

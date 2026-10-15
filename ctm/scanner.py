@@ -12,17 +12,6 @@ from .models import Asset, Finding
 
 VALID_STATUSES = {"discovered", "suspected", "validated", "confirmed"}
 
-SEVERITY_STATUS = {
-    "critical": "confirmed",
-    "high": "validated",
-    "medium": "suspected",
-    "moderate": "suspected",
-    "low": "discovered",
-    "info": "discovered",
-    "informational": "discovered",
-    "unknown": "discovered",
-}
-
 SEVERITY_LEVELS = {
     "critical": "critical",
     "high": "high",
@@ -114,17 +103,13 @@ def _port(value: Any) -> int | None:
     return port if 1 <= port <= 65535 else None
 
 
-def _status(record: dict[str, Any], normalized_severity: str | None = None) -> str:
-    """Derive status from explicit status or canonical, source-normalized severity."""
+def _status(record: dict[str, Any]) -> str:
+    """Preserve explicit validation status; severity alone is not validation."""
     raw_status = record.get("status")
     explicit = raw_status.strip().lower() if isinstance(raw_status, str) else ""
     if explicit in VALID_STATUSES:
         return explicit
-
-    severity = normalized_severity
-    if severity is None:
-        severity = str(record.get("severity", "")).strip().lower()
-    return SEVERITY_STATUS.get(severity, "discovered")
+    return "discovered"
 
 
 def _normalized_severity(value: Any, source: str = "", risk_factor: Any = None) -> str:
@@ -187,7 +172,7 @@ def _vulnerability(record: dict[str, Any], source: str) -> dict[str, Any]:
         record.get("severity"), source=source, risk_factor=risk_factor
     )
     result: dict[str, Any] = {
-        "status": _status(record, normalized_severity=severity),
+        "status": _status(record),
         "severity": severity,
         "title": _title(record),
     }

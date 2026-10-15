@@ -193,14 +193,14 @@ def test_malformed_optional_vulnerability_text_is_ignored():
     assert "impact" not in vulnerability
 
 
-def test_severity_is_normalized_and_status_preserved():
+def test_severity_is_normalized_without_promoting_status():
     data = normalize_scanner_records(
         [{"host": "api", "severity": "Moderate"}], "qualys"
     )
     finding = data["findings"][0]
 
     assert finding["vulnerability"]["severity"] == "medium"
-    assert finding["vulnerability"]["status"] == "suspected"
+    assert finding["vulnerability"]["status"] == "discovered"
 
 
 def test_explicit_status_overrides_severity_mapping():
@@ -250,7 +250,7 @@ def test_non_dict_controls_and_tags_are_safely_ignored():
     assert asset["tags"] == []
 
 
-def test_malformed_status_falls_back_to_severity():
+def test_malformed_status_defaults_to_discovered():
     for value in ({"status": "confirmed"}, ["confirmed"], 123):
         data = normalize_scanner_records(
             [{
@@ -263,8 +263,20 @@ def test_malformed_status_falls_back_to_severity():
 
         assert (
             data["findings"][0]["vulnerability"]["status"]
-            == "validated"
+            == "discovered"
         )
+
+
+def test_high_and_critical_severity_do_not_promote_validation_status():
+    for severity in ("high", "critical"):
+        data = normalize_scanner_records(
+            [{"host": "api", "severity": severity}],
+            "generic-json",
+        )
+
+        vulnerability = data["findings"][0]["vulnerability"]
+        assert vulnerability["status"] == "discovered"
+        assert vulnerability["severity"] == severity
 
 
 def test_valid_explicit_status_is_preserved():

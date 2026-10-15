@@ -56,7 +56,7 @@ def test_nuclei_fixture_preserves_high_risk_context():
     assert finding.exposure["internet_facing"] is True
     assert finding.exposure["authentication_required"] is False
     assert finding.score == 100.0
-    assert finding.decision == "TEST_IMMEDIATELY"
+    assert finding.decision == "PRIORITIZE_VALIDATION"
     assert "T1190 - Exploit Public-Facing Application" in finding.attack_techniques
 
 

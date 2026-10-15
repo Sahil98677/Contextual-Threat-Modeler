@@ -41,6 +41,16 @@ def test_invalid_criticality_falls_back_to_three():
     assert next(iter(data["assets"].values()))["criticality"] == 3
 
 
+def test_non_finite_criticality_falls_back_to_three():
+    for value in ("Infinity", "-Infinity", float("inf"), float("-inf")):
+        data = normalize_scanner_records(
+            [{"host": "api", "criticality": value}],
+            "generic-json",
+        )
+        asset = next(iter(data["assets"].values()))
+        assert asset["criticality"] == 3
+
+
 def test_severity_is_normalized_and_status_preserved():
     data = normalize_scanner_records(
         [{"host": "api", "severity": "Moderate"}], "qualys"

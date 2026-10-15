@@ -55,7 +55,7 @@ def _criticality(value: Any) -> int:
     """Normalize scanner-provided asset criticality to CTM's 1–5 range."""
     try:
         parsed = int(float(value))
-    except (TypeError, ValueError):
+    except (OverflowError, TypeError, ValueError):
         return 3
     return max(1, min(5, parsed))
 

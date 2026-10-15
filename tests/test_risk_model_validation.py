@@ -299,3 +299,69 @@ def test_high_risk_decision_respects_status_confidence(
     confidence = calculate_confidence(finding)
 
     assert decide(85.0, confidence) == expected_decision
+
+
+@pytest.mark.parametrize(
+    ("status", "expected_confidence"),
+    [
+        ("discovered", 0.35),
+        ("suspected", 0.60),
+        ("validated", 0.60),
+        ("confirmed", 0.60),
+    ],
+)
+def test_scanner_reported_status_does_not_receive_verified_confidence(
+    status: str,
+    expected_confidence: float,
+) -> None:
+    finding = _finding(status=status)
+    finding.evidence["validation_provenance"] = {
+        "status_origin": "scanner_reported",
+        "independently_verified": False,
+    }
+
+    assert calculate_confidence(finding) == expected_confidence
+
+
+def test_independently_verified_finding_can_retain_status_confidence() -> None:
+    finding = _finding(status="confirmed")
+    finding.evidence["validation_provenance"] = {
+        "status_origin": "ctm_verified",
+        "independently_verified": True,
+    }
+
+    assert calculate_confidence(finding) == 0.95
+
+
+def test_scanner_reported_confirmed_status_is_not_claimed_as_verified() -> None:
+    finding = _finding(status="confirmed")
+    finding.evidence["validation_provenance"] = {
+        "status_origin": "scanner_reported",
+        "independently_verified": False,
+    }
+
+    calculate_risk(finding, Asset(id="A-001", name="Upload service"))
+
+    assert not any(
+        "independent validation evidence" in item for item in finding.rationale
+    )
+    assert any(
+        "independent validation has not been established" in item
+        for item in finding.rationale
+    )
+
+
+def test_unverified_provenance_does_not_receive_verified_confidence() -> None:
+    finding = _finding(status="confirmed")
+    finding.evidence["validation_provenance"] = {
+        "status_origin": "unknown",
+        "independently_verified": True,
+    }
+
+    assert calculate_confidence(finding) == 0.60
+
+
+def test_missing_provenance_preserves_legacy_confidence() -> None:
+    finding = _finding(status="confirmed")
+
+    assert calculate_confidence(finding) == 0.95

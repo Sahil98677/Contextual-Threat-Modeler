@@ -55,9 +55,33 @@ def calculate_risk(finding, asset) -> None:
         finding.rationale.append("An exploit is reported as available, increasing likelihood.")
     if finding.vulnerability.get("attack_complexity") == "low":
         finding.rationale.append("The reported attack complexity is low, increasing likelihood.")
-    if finding.vulnerability.get("status") in ("validated", "confirmed"):
-        finding.rationale.append("The vulnerability has validation evidence.")
-    elif finding.vulnerability.get("status") == "suspected":
-        finding.rationale.append("The vulnerability is suspected but has not been validated.")
+    status = finding.vulnerability.get("status")
+    provenance = finding.evidence.get("validation_provenance", {})
+    if not isinstance(provenance, dict):
+        provenance = {}
+
+    independently_verified = (
+        provenance.get("status_origin") == "ctm_verified"
+        and provenance.get("independently_verified") is True
+    )
+
+    if status in ("validated", "confirmed"):
+        if independently_verified:
+            finding.rationale.append(
+                "The vulnerability has independent validation evidence."
+            )
+        elif provenance.get("status_origin") == "scanner_reported":
+            finding.rationale.append(
+                "The scanner reports this status, but independent validation "
+                "has not been established."
+            )
+        else:
+            finding.rationale.append(
+                "The reported validation status has no verified provenance."
+            )
+    elif status == "suspected":
+        finding.rationale.append(
+            "The vulnerability is suspected but has not been validated."
+        )
     if modifier < 1.0:
         finding.rationale.append("Existing security controls reduce, but do not eliminate, risk.")

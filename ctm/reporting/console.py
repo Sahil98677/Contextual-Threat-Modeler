@@ -23,8 +23,11 @@ def render_console(results, trend=None) -> str:
         lines.extend(["", "ATTACK PATHS", "-" * 78])
         for path in paths:
             lines.append(f"  {path['path_id']} | {risk_level(path['path_score'])} | {path['path_score']:.1f}/100")
-            lines.append("    " + " -> ".join(path["nodes"]))
+            lines.append(f"    Classification: {path['classification']} (confirmed: {path['confirmed']})")
+            lines.append("    Candidate summary: " + " | ".join(path["nodes"]))
             lines.append(f"    Correlation: {path['relationship']}")
+            for limitation in path["limitations"]:
+                lines.append(f"    Limitation: {limitation}")
     if trend:
         lines.extend(["", "RISK TREND", "-" * 78])
         lines.append(f"  Status: {trend['status']}")

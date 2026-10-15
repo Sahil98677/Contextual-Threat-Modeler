@@ -3,6 +3,7 @@ import json
 import pytest
 
 from ctm.engine import run
+from ctm.reporting.console import render_console
 from ctm.reporting.html_report import render_html
 from ctm.reporting.json_report import render_json
 
@@ -27,11 +28,24 @@ def test_html_report_contains_summary_and_findings(sample_results):
     assert "Decisions" in report
     assert "Attack paths" in report
     assert "PATH-" in report
+    assert "inferred_candidate" in report
+    assert "confirmed: false" in report
+    assert "not ordered as an attack chain" in report
+    assert "path-summary" in report
+    assert "→" not in report
 
 
 def test_html_report_handles_empty_results():
     report = render_html([])
     assert "No findings" in report
+
+
+def test_console_report_marks_attack_paths_as_unconfirmed_candidates(sample_results):
+    report = render_console(sample_results)
+
+    assert "Classification: inferred_candidate (confirmed: False)" in report
+    assert "Candidate correlation only" in report
+    assert " -> " not in report
 
 
 def test_html_report_includes_risk_trend():

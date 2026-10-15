@@ -1,4 +1,5 @@
 from ..context.controls import control_modifier
+from ..context.values import as_optional_bool
 from ..decision.thresholds import CRITICAL_THRESHOLD
 from ..verification import has_controlled_verification
 from .confidence import calculate_confidence
@@ -21,17 +22,22 @@ def calculate_risk(finding, asset) -> None:
         finding.score = max(finding.score, CRITICAL_THRESHOLD)
 
     finding.rationale = []
-    if finding.exposure.get("internet_facing") is None:
+    internet_facing = as_optional_bool(finding.exposure.get("internet_facing"))
+    if internet_facing is None:
         finding.rationale.append(
             "Internet-facing exposure is unknown and scored conservatively."
         )
-    elif finding.exposure.get("internet_facing"):
+    elif internet_facing:
         finding.rationale.append("Internet-facing attack surface increases exposure.")
-    if finding.exposure.get("authentication_required") is None:
+
+    authentication_required = as_optional_bool(
+        finding.exposure.get("authentication_required")
+    )
+    if authentication_required is None:
         finding.rationale.append(
             "Authentication requirements are unknown and scored conservatively."
         )
-    elif not finding.exposure.get("authentication_required"):
+    elif not authentication_required:
         finding.rationale.append("No authentication is required before reaching the endpoint.")
     trust_zone = finding.exposure.get("trust_zone")
     if (

@@ -112,6 +112,82 @@ def test_unknown_exposure_is_not_scored_below_known_low_exposure() -> None:
     assert any("unknown" in item.lower() for item in unknown.rationale)
 
 
+@pytest.mark.parametrize(
+    ("exposure_value", "expected_rationale"),
+    [
+        ("false", None),
+        ("true", "Internet-facing attack surface increases exposure"),
+        ("unknown", "Internet-facing exposure is unknown"),
+    ],
+)
+def test_internet_exposure_rationale_uses_normalized_boolean(
+    exposure_value: str,
+    expected_rationale: str,
+) -> None:
+    finding = _validation_finding(
+        {
+            "internet_facing": exposure_value,
+            "authentication_required": True,
+            "trust_zone": "internal",
+        }
+    )
+
+    _score(finding)
+
+    if expected_rationale is None:
+        assert not any("Internet-facing" in item for item in finding.rationale)
+    else:
+        assert any(expected_rationale in item for item in finding.rationale)
+
+
+@pytest.mark.parametrize(
+    ("exposure_value", "expected_rationale"),
+    [
+        ("false", "No authentication is required"),
+        ("true", None),
+        ("unknown", "Authentication requirements are unknown"),
+    ],
+)
+def test_authentication_rationale_uses_normalized_boolean(
+    exposure_value: str,
+    expected_rationale: str,
+) -> None:
+    finding = _validation_finding(
+        {
+            "internet_facing": False,
+            "authentication_required": exposure_value,
+            "trust_zone": "internal",
+        }
+    )
+
+    _score(finding)
+
+    if expected_rationale is None:
+        assert not any("Authentication" in item for item in finding.rationale)
+    else:
+        assert any(expected_rationale in item for item in finding.rationale)
+
+
+def test_string_boolean_exposure_matches_boolean_scoring() -> None:
+    string_values = _validation_finding(
+        {
+            "internet_facing": "true",
+            "authentication_required": "false",
+            "trust_zone": "DMZ",
+        }
+    )
+    boolean_values = _validation_finding(
+        {
+            "internet_facing": True,
+            "authentication_required": False,
+            "trust_zone": "DMZ",
+        }
+    )
+
+    assert _score(string_values) == _score(boolean_values)
+    assert string_values.rationale == boolean_values.rationale
+
+
 def test_irrelevant_mfa_does_not_reduce_api_finding_score() -> None:
     exposure = {
         "internet_facing": True,

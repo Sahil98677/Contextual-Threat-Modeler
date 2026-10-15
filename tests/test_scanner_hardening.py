@@ -1,3 +1,5 @@
+import pytest
+
 from ctm.models import Asset, Finding
 from ctm.scanner import normalize_scanner_records
 from ctm.scoring.risk import calculate_risk
@@ -329,6 +331,60 @@ def test_valid_secret_type_is_trimmed():
     )
 
     assert data["findings"][0]["evidence"]["secret_type"] == "api_key"
+
+
+@pytest.mark.parametrize(
+    ("record", "expected_status", "expected_origin"),
+    [
+        (
+            {"status": "confirmed", "severity": "critical"},
+            "confirmed",
+            "scanner_reported",
+        ),
+        (
+            {"severity": "critical"},
+            "discovered",
+            "ctm_defaulted",
+        ),
+        (
+            {"status": "invalid", "severity": "high"},
+            "discovered",
+            "ctm_defaulted",
+        ),
+    ],
+)
+def test_validation_provenance_is_explicit(
+    record, expected_status, expected_origin
+):
+    data = normalize_scanner_records(
+        [{"host": "api", **record}],
+        "generic-json",
+    )
+    finding = data["findings"][0]
+
+    assert finding["vulnerability"]["status"] == expected_status
+    assert (
+        finding["evidence"]["validation_provenance"]["status_origin"]
+        == expected_origin
+    )
+    assert (
+        finding["evidence"]["validation_provenance"]["independently_verified"]
+        is False
+    )
+
+
+def test_scanner_cannot_claim_independent_verification():
+    data = normalize_scanner_records(
+        [{
+            "host": "api",
+            "status": "confirmed",
+            "independently_verified": True,
+        }],
+        "generic-json",
+    )
+
+    provenance = data["findings"][0]["evidence"]["validation_provenance"]
+    assert provenance["independently_verified"] is False
 
 
 def test_non_dict_records_are_skipped_without_reindexing():

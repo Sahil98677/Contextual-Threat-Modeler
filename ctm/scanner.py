@@ -112,6 +112,13 @@ def _status(record: dict[str, Any]) -> str:
     return "discovered"
 
 
+def _status_origin(record: dict[str, Any]) -> str:
+    """Identify whether validation status came from the scanner or CTM."""
+    raw_status = record.get("status")
+    explicit = raw_status.strip().lower() if isinstance(raw_status, str) else ""
+    return "scanner_reported" if explicit in VALID_STATUSES else "ctm_defaulted"
+
+
 def _normalized_severity(value: Any, source: str = "", risk_factor: Any = None) -> str:
     """Normalize severity using the source scanner's documented numeric scale."""
     return normalize_severity(value, source=source, risk_factor=risk_factor)
@@ -282,6 +289,10 @@ def normalize_scanner_records(
                         record.get("secret_exposed", False)
                     ),
                     "secret_type": _text(record.get("secret_type"), "") or None,
+                    "validation_provenance": {
+                        "status_origin": _status_origin(record),
+                        "independently_verified": False,
+                    },
                 },
             }
         )

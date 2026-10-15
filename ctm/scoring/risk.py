@@ -28,7 +28,13 @@ def calculate_risk(finding, asset) -> None:
         finding.rationale.append("The asset handles sensitive data.")
     if finding.evidence.get("secret_exposed"):
         finding.rationale.append("Potential secret exposure materially increases impact.")
+    if finding.vulnerability.get("exploit_available"):
+        finding.rationale.append("An exploit is reported as available, increasing likelihood.")
+    if finding.vulnerability.get("attack_complexity") == "low":
+        finding.rationale.append("The reported attack complexity is low, increasing likelihood.")
     if finding.vulnerability.get("status") in ("validated", "confirmed"):
         finding.rationale.append("The vulnerability has validation evidence.")
+    elif finding.vulnerability.get("status") == "suspected":
+        finding.rationale.append("The vulnerability is suspected but has not been validated.")
     if modifier < 1.0:
         finding.rationale.append("Existing security controls reduce, but do not eliminate, risk.")

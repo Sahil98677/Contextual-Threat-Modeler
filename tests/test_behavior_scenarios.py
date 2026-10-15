@@ -37,7 +37,7 @@ def _write_scenario(tmp_path: Path, name: str) -> None:
     [
         ("internal_low_impact_discovery", 6.0, "MONITOR"),
         ("internet_facing_critical_confirmed_exploit", 100.0, "TEST_IMMEDIATELY"),
-        ("critical_finding_with_controls", 49.1, "INVESTIGATE"),
+        ("critical_finding_with_controls", 90.0, "TEST_IMMEDIATELY"),
         ("discovered_secret_low_criticality_asset", 85.0, "PRIORITIZE_VALIDATION"),
     ],
 )
@@ -84,9 +84,9 @@ def test_minimal_input_uses_safe_optional_field_defaults() -> None:
     assert finding["endpoint_type"] == "unknown"
     assert finding["asset_id"] == "A1"
     assert finding["exposure"] == {
-        "internet_facing": False,
-        "authentication_required": True,
-        "trust_zone": "internal",
+        "internet_facing": None,
+        "authentication_required": None,
+        "trust_zone": None,
     }
     assert finding["vulnerability"]["status"] == "discovered"
     assert finding["controls"]["security_headers"] == "unknown"
@@ -134,14 +134,26 @@ def test_invalid_vulnerability_status_is_rejected() -> None:
     ],
 )
 def test_each_exposure_factor_increases_likelihood(exposure: dict[str, object]) -> None:
-    base = Finding(id="F", asset_id="A", method="GET", path="/x", endpoint_type="api")
+    low_exposure = {
+        "internet_facing": False,
+        "authentication_required": True,
+        "trust_zone": "internal",
+    }
+    base = Finding(
+        id="F",
+        asset_id="A",
+        method="GET",
+        path="/x",
+        endpoint_type="api",
+        exposure=low_exposure,
+    )
     exposed = Finding(
         id="F",
         asset_id="A",
         method="GET",
         path="/x",
         endpoint_type="api",
-        exposure=exposure,
+        exposure={**low_exposure, **exposure},
     )
     asset = Asset(id="A", name="Asset")
 
@@ -182,22 +194,30 @@ def test_vulnerability_evidence_increases_likelihood(
 
 
 @pytest.mark.parametrize(
-    "control",
-    ["waf", "file_validation", "av_scanning", "mfa"],
+    ("control", "endpoint_type", "cwe"),
+    [
+        ("waf", "api", "CWE-89"),
+        ("file_validation", "file_upload", "CWE-434"),
+        ("av_scanning", "file_upload", "CWE-434"),
+        ("mfa", "admin", "CWE-522"),
+    ],
 )
-def test_each_supported_control_reduces_a_high_risk_score(control: str) -> None:
+def test_each_relevant_control_reduces_a_high_risk_score(
+    control: str, endpoint_type: str, cwe: str
+) -> None:
     finding_data: dict[str, Any] = {
         "id": "F",
         "asset_id": "A",
         "method": "POST",
         "path": "/upload",
-        "endpoint_type": "file_upload",
+        "endpoint_type": endpoint_type,
         "exposure": {"internet_facing": True, "authentication_required": False},
         "vulnerability": {
             "status": "confirmed",
             "exploit_available": True,
             "attack_complexity": "low",
             "impact": "critical",
+            "cwe": cwe,
         },
     }
     without_control = Finding(**finding_data)

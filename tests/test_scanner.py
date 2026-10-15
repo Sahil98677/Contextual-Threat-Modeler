@@ -24,6 +24,19 @@ def test_scanner_record_becomes_ctm_finding():
     assert finding["vulnerability"]["cve"] == "CVE-2026-0001"
     assert finding["exposure"]["internet_facing"] is True
 
+
+def test_scanner_record_preserves_unassessed_exposure():
+    data = normalize_scanner_records(
+        [{"host": "api.example.test", "severity": "high"}], "nuclei"
+    )
+
+    assert data["findings"][0]["exposure"] == {
+        "internet_facing": None,
+        "authentication_required": None,
+        "trust_zone": None,
+    }
+
+
 def test_parse_export_always_returns_list(tmp_path: Path):
     path = tmp_path / "generic.json"
     path.write_text('{"finding": "example"}', encoding="utf-8")

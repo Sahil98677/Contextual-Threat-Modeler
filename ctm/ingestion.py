@@ -3,7 +3,7 @@ import math
 from pathlib import Path
 from typing import Any
 
-from .context.values import as_bool
+from .context.values import as_bool, as_optional_bool
 
 REQUIRED_FILES = {
     "assets": "assets.json",
@@ -212,11 +212,16 @@ def normalize(raw: dict[str, Any]) -> dict[str, Any]:
                     "path": path,
                     "endpoint_type": endpoint.get("type", "unknown").lower(),
                     "exposure": {
-                        "internet_facing": as_bool(endpoint.get("internet_facing", False)),
-                        "authentication_required": as_bool(
-                            endpoint.get("authentication_required", True), True
+                        "internet_facing": as_optional_bool(endpoint.get("internet_facing")),
+                        "authentication_required": as_optional_bool(
+                            endpoint.get("authentication_required")
                         ),
-                        "trust_zone": endpoint.get("trust_zone", "internal"),
+                        "trust_zone": (
+                            endpoint.get("trust_zone")
+                            if isinstance(endpoint.get("trust_zone"), str)
+                            and endpoint["trust_zone"].strip()
+                            else None
+                        ),
                     },
                     "vulnerability": {
                         **vuln,

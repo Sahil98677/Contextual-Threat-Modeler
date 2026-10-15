@@ -116,7 +116,8 @@
           "status": "confirmed",
           "exploit_available": true,
           "attack_complexity": "low",
-          "impact": "critical"
+          "impact": "critical",
+          "cwe": "CWE-94"
         }
       ],
       "controls.json": [

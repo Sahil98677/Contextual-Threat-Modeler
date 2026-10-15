@@ -19,3 +19,26 @@ def as_bool(value: Any, default: bool = False) -> bool:
         if normalized in {"false", "no", "n", "0", "off", ""}:
             return False
     return default
+
+
+def as_optional_bool(value: Any) -> bool | None:
+    """Parse a boolean value while preserving missing and unrecognized input."""
+    if value is None:
+        return None
+    if isinstance(value, (bool, int, float)):
+        return as_bool(value)
+    if isinstance(value, str) and value.strip().lower() in {
+        "true",
+        "yes",
+        "y",
+        "1",
+        "on",
+        "false",
+        "no",
+        "n",
+        "0",
+        "off",
+        "",
+    }:
+        return as_bool(value)
+    return None

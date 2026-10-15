@@ -10,7 +10,9 @@ def calculate_risk(finding, asset) -> None:
     finding.impact = round(calculate_impact(finding, asset), 2)
     finding.confidence = calculate_confidence(finding)
 
-    modifier = control_modifier(finding.controls)
+    modifier = control_modifier(
+        finding.controls, finding.endpoint_type, finding.vulnerability
+    )
     raw_score = finding.likelihood * finding.impact
     finding.score = round(min(100.0, raw_score * modifier), 1)
 
@@ -18,10 +20,24 @@ def calculate_risk(finding, asset) -> None:
         finding.score = max(finding.score, CRITICAL_THRESHOLD)
 
     finding.rationale = []
-    if finding.exposure.get("internet_facing"):
+    if finding.exposure.get("internet_facing") is None:
+        finding.rationale.append(
+            "Internet-facing exposure is unknown and scored conservatively."
+        )
+    elif finding.exposure.get("internet_facing"):
         finding.rationale.append("Internet-facing attack surface increases exposure.")
-    if not finding.exposure.get("authentication_required", True):
+    if finding.exposure.get("authentication_required") is None:
+        finding.rationale.append(
+            "Authentication requirements are unknown and scored conservatively."
+        )
+    elif not finding.exposure.get("authentication_required"):
         finding.rationale.append("No authentication is required before reaching the endpoint.")
+    trust_zone = finding.exposure.get("trust_zone")
+    if (
+        not isinstance(trust_zone, str)
+        or trust_zone.strip().upper() not in {"INTERNAL", "DMZ", "EXTERNAL"}
+    ):
+        finding.rationale.append("Trust zone is unknown and scored conservatively.")
     if asset.criticality >= 4:
         finding.rationale.append("The target asset has high business criticality.")
     if asset.data_classification in ("confidential", "restricted"):

@@ -36,12 +36,33 @@ def test_exposure_factors_parse_string_booleans():
     assert factors["total"] == 3.0
 
 
+def test_unknown_exposure_is_scored_as_risk_positive():
+    assert exposure_factors({})["total"] == 6.0
+
+
+def test_explicit_low_exposure_is_distinct_from_unknown():
+    unknown = exposure_factors({})
+    assessed_low = exposure_factors(
+        {
+            "internet_facing": False,
+            "authentication_required": True,
+            "trust_zone": "internal",
+        }
+    )
+
+    assert unknown["total"] > assessed_low["total"]
+
+
 def test_waf_string_false_does_not_reduce_modifier():
-    assert control_modifier({"waf": "false"}) == 1.0
+    assert control_modifier({"waf": "false"}, "api", {"cwe": "CWE-89"}) == 1.0
 
 
 def test_waf_string_true_reduces_modifier():
-    assert control_modifier({"waf": "true"}) == 0.90
+    assert control_modifier({"waf": "true"}, "api", {"cwe": "CWE-89"}) == 0.90
+
+
+def test_waf_does_not_reduce_findings_without_mapped_vulnerability_evidence():
+    assert control_modifier({"waf": True}, "api", {}) == 1.0
 
 
 def test_control_string_false_values_do_not_reduce_modifier():
@@ -51,14 +72,43 @@ def test_control_string_false_values_do_not_reduce_modifier():
         "av_scanning": "false",
         "mfa": "false",
     }
-    assert control_modifier(controls) == 1.0
+    assert control_modifier(controls, "file_upload", {"cwe": "CWE-434"}) == 1.0
 
 
-def test_control_string_true_values_apply_modifiers():
-    controls = {
-        "waf": "true",
-        "file_validation": "true",
-        "av_scanning": "true",
-        "mfa": "true",
-    }
-    assert control_modifier(controls) == 0.90 * 0.75 * 0.85 * 0.95
+def test_file_controls_do_not_reduce_unrelated_findings():
+    controls = {"file_validation": True, "av_scanning": True}
+
+    assert control_modifier(controls, "api", {"cwe": "CWE-89"}) == 1.0
+
+
+def test_file_controls_do_not_reduce_remote_code_execution_findings():
+    controls = {"file_validation": True, "av_scanning": True}
+
+    assert control_modifier(controls, "file_upload", {"cwe": "CWE-94"}) == 1.0
+
+
+def test_mfa_does_not_reduce_non_authentication_findings():
+    assert control_modifier({"mfa": True}, "admin", {"cwe": "CWE-89"}) == 1.0
+
+
+def test_mfa_reduces_credential_findings_on_authentication_endpoints():
+    assert control_modifier(
+        {"mfa": True}, "admin", {"cwe": "CWE-522"}
+    ) == 0.95
+
+
+def test_security_headers_only_reduce_relevant_admin_findings():
+    assert control_modifier(
+        {"security_headers": "strong"}, "admin", {"cwe": "CWE-79"}
+    ) == 0.90
+    assert control_modifier(
+        {"security_headers": "strong"}, "api", {"cwe": "CWE-89"}
+    ) == 1.0
+
+
+def test_relevant_file_controls_apply_together():
+    controls = {"file_validation": True, "av_scanning": True}
+
+    assert control_modifier(
+        controls, "file_upload", {"cwe": "CWE-434"}
+    ) == 0.75 * 0.85

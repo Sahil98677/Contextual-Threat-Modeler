@@ -46,3 +46,13 @@ def test_rationale_only_mentions_exploit_when_evidence_is_present() -> None:
     calculate_risk(finding, Asset(id="A-001", name="Upload service"))
 
     assert not any("exploit is reported as available" in item for item in finding.rationale)
+
+
+def test_unknown_exposure_is_reported_in_rationale() -> None:
+    finding = _finding()
+
+    calculate_risk(finding, Asset(id="A-001", name="Upload service"))
+
+    assert any("Internet-facing exposure is unknown" in item for item in finding.rationale)
+    assert any("Authentication requirements are unknown" in item for item in finding.rationale)
+    assert any("Trust zone is unknown" in item for item in finding.rationale)

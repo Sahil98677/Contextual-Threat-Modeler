@@ -31,7 +31,12 @@ def test_controls_reduce_risk():
         path="/x",
         endpoint_type="api",
         exposure={"internet_facing": True, "authentication_required": False},
-        vulnerability={"status": "confirmed", "impact": "high", "exploit_available": True},
+        vulnerability={
+            "status": "confirmed",
+            "impact": "high",
+            "exploit_available": True,
+            "cwe": "CWE-89",
+        },
     )
     controlled = Finding(**base.to_dict())
     controlled.controls = {

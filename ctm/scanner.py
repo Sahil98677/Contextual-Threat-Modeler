@@ -6,6 +6,7 @@ import re
 from typing import Any
 
 from .context.severity import normalize_severity
+from .context.values import as_optional_bool
 from .models import Asset, Finding
 
 VALID_STATUSES = {"discovered", "suspected", "validated", "confirmed"}
@@ -211,13 +212,16 @@ def normalize_scanner_records(
                     or "unknown"
                 ).lower(),
                 "exposure": {
-                    "internet_facing": _as_bool(
-                        record.get("internet_facing", False)
+                    "internet_facing": as_optional_bool(record.get("internet_facing")),
+                    "authentication_required": as_optional_bool(
+                        record.get("authentication_required")
                     ),
-                    "authentication_required": _as_bool(
-                        record.get("authentication_required", True), True
+                    "trust_zone": (
+                        record.get("trust_zone")
+                        if isinstance(record.get("trust_zone"), str)
+                        and record["trust_zone"].strip()
+                        else None
                     ),
-                    "trust_zone": record.get("trust_zone", "internal"),
                 },
                 "vulnerability": _vulnerability(record, source_name),
                 "controls": dict(record.get("controls") or {})

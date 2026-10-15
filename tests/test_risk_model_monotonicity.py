@@ -93,10 +93,18 @@ def test_controls_never_increase_score_for_the_same_finding() -> None:
         data_classification="restricted",
     )
     unmitigated = _finding(
-        status="confirmed", exploit_available=True, attack_complexity="low", impact="critical"
+        status="confirmed",
+        exploit_available=True,
+        attack_complexity="low",
+        impact="critical",
+        cwe="CWE-434",
     )
     mitigated = _finding(
-        status="confirmed", exploit_available=True, attack_complexity="low", impact="critical"
+        status="confirmed",
+        exploit_available=True,
+        attack_complexity="low",
+        impact="critical",
+        cwe="CWE-434",
     )
     mitigated.controls = {
         "waf": True,

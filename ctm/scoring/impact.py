@@ -1,6 +1,7 @@
 def calculate_impact(finding, asset) -> float:
     value = 2.0 + max(0, min(4, asset.criticality - 1))
-    if asset.data_classification in ("confidential", "restricted"):
+    classification = str(asset.data_classification).strip().lower()
+    if classification in {"confidential", "restricted", "unknown"}:
         value += 2.0
     if finding.vulnerability.get("impact") in ("high", "critical"):
         value += 2.0

@@ -238,6 +238,32 @@ def test_synthetic_risk_ranking_matrix() -> None:
     )
 
 
+def test_unknown_asset_classification_increases_impact_and_is_explained() -> None:
+    finding = _validation_finding()
+    known_internal = Asset(
+        id="A-VALIDATION",
+        name="Synthetic production asset",
+        criticality=3,
+        data_classification="internal",
+    )
+    unknown_classification = Asset(
+        id="A-VALIDATION",
+        name="Synthetic production asset",
+        criticality=3,
+        data_classification="unknown",
+    )
+
+    calculate_risk(finding, known_internal)
+    internal_score = finding.score
+    calculate_risk(finding, unknown_classification)
+
+    assert finding.score > internal_score
+    assert any(
+        "Data classification is unknown and scored conservatively." in reason
+        for reason in finding.rationale
+    )
+
+
 @pytest.mark.parametrize(
     ("status", "expected_confidence"),
     [

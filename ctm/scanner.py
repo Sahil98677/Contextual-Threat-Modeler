@@ -60,6 +60,15 @@ def _criticality(value: Any) -> int:
     return max(1, min(5, parsed))
 
 
+def _data_classification(value: Any) -> str:
+    """Normalize asset data classification without trusting scanner types."""
+    if not isinstance(value, str):
+        return "unknown"
+    normalized = value.strip().lower()
+    allowed = {"public", "internal", "confidential", "restricted"}
+    return normalized if normalized in allowed else "unknown"
+
+
 def _status(record: dict[str, Any], normalized_severity: str | None = None) -> str:
     """Derive status from explicit status or canonical, source-normalized severity."""
     explicit = str(record.get("status", "")).strip().lower()
@@ -189,9 +198,9 @@ def normalize_scanner_records(
                 "name": target,
                 "asset_type": "scanner_target",
                 "criticality": _criticality(record.get("criticality", 3)),
-                "data_classification": str(
+                "data_classification": _data_classification(
                     record.get("data_classification", "internal")
-                ).lower(),
+                ),
                 "production": _as_bool(record.get("production", True), True),
                 "owner": str(record.get("owner", "")),
                 "tags": list(record.get("tags", []))

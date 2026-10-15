@@ -42,6 +42,13 @@ def calculate_risk(finding, asset) -> None:
         finding.rationale.append("The target asset has high business criticality.")
     if asset.data_classification in ("confidential", "restricted"):
         finding.rationale.append("The asset handles sensitive data.")
+    if (
+        not isinstance(asset.data_classification, str)
+        or asset.data_classification.strip().lower() == "unknown"
+    ):
+        finding.rationale.append(
+            "Data classification is unknown and scored conservatively."
+        )
     if finding.evidence.get("secret_exposed"):
         finding.rationale.append("Potential secret exposure materially increases impact.")
     if finding.vulnerability.get("exploit_available"):

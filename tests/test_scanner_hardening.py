@@ -51,6 +51,34 @@ def test_non_finite_criticality_falls_back_to_three():
         assert asset["criticality"] == 3
 
 
+def test_invalid_data_classification_becomes_unknown():
+    for value in (["confidential"], {"classification": "restricted"}, 123):
+        data = normalize_scanner_records(
+            [{"host": "api", "data_classification": value}],
+            "generic-json",
+        )
+        asset = next(iter(data["assets"].values()))
+        assert asset["data_classification"] == "unknown"
+
+
+def test_data_classification_is_normalized():
+    data = normalize_scanner_records(
+        [{"host": "api", "data_classification": "  CONFIDENTIAL  "}],
+        "generic-json",
+    )
+    asset = next(iter(data["assets"].values()))
+    assert asset["data_classification"] == "confidential"
+
+
+def test_missing_data_classification_keeps_internal_default():
+    data = normalize_scanner_records(
+        [{"host": "api"}],
+        "generic-json",
+    )
+    asset = next(iter(data["assets"].values()))
+    assert asset["data_classification"] == "internal"
+
+
 def test_severity_is_normalized_and_status_preserved():
     data = normalize_scanner_records(
         [{"host": "api", "severity": "Moderate"}], "qualys"

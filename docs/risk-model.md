@@ -47,8 +47,16 @@ Impact starts at **2.0** and is capped to 0–10 after adding:
 |---|---:|
 | Asset criticality | `clamp(criticality − 1, 0, 4)` |
 | Data classification is `confidential` or `restricted` | +2.0 |
+| Data classification is unknown or unrecognized | +2.0 |
 | Vulnerability impact is `high` or `critical` | +2.0 |
 | Secret exposure evidence is present | +2.0 |
+
+Scanner data classifications are normalized to `public`, `internal`,
+`confidential`, or `restricted`. Missing classification retains the scanner
+pipeline's `internal` default; malformed or unrecognized explicit values become
+`unknown`. Unknown classification receives the conservative +2.0 impact
+adjustment and is identified as unknown in the rationale. This is a scoring
+assumption, not a claim that the data is actually confidential.
 
 ## Control modifiers
 

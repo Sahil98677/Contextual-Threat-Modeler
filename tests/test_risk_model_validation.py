@@ -1,5 +1,7 @@
 from typing import Any
 
+import pytest
+
 from ctm.models import Asset, Finding
 from ctm.scoring.risk import calculate_risk
 
@@ -134,3 +136,28 @@ def test_waf_does_not_reduce_unmapped_cwe_score() -> None:
     with_irrelevant_control.controls = {"waf": True}
 
     assert _score(with_irrelevant_control) == _score(without_control)
+
+
+@pytest.mark.parametrize(
+    "exposure_change",
+    [
+        {"internet_facing": True},
+        {"authentication_required": False},
+        {"trust_zone": "DMZ"},
+    ],
+)
+def test_higher_exposure_context_does_not_lower_risk_score(
+    exposure_change: dict[str, Any],
+) -> None:
+    baseline_exposure = {
+        "internet_facing": False,
+        "authentication_required": True,
+        "trust_zone": "internal",
+    }
+    baseline = _validation_finding(baseline_exposure)
+    changed = _validation_finding({**baseline_exposure, **exposure_change})
+
+    baseline_score = _score(baseline)
+    changed_score = _score(changed)
+
+    assert changed_score > baseline_score

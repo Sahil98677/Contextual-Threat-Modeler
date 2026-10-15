@@ -328,6 +328,10 @@ def test_independently_verified_finding_can_retain_status_confidence() -> None:
     finding.evidence["validation_provenance"] = {
         "status_origin": "ctm_verified",
         "independently_verified": True,
+        "decision": "verified",
+        "reviewer_id": "reviewer-001",
+        "verified_at": "2026-10-15T10:30:00+00:00",
+        "evidence_reference": "SEC-REVIEW-128",
     }
 
     assert calculate_confidence(finding) == 0.95

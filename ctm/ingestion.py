@@ -236,6 +236,10 @@ def normalize(raw: dict[str, Any]) -> dict[str, Any]:
                         "details": endpoint.get("details", ""),
                         "secret_exposed": bool(secret),
                         "secret_type": secret.get("secret_type") if secret else None,
+                        "validation_provenance": {
+                            "status_origin": "input_reported",
+                            "independently_verified": False,
+                        },
                     },
                 }
             )

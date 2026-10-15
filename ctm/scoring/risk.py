@@ -1,5 +1,6 @@
 from ..context.controls import control_modifier
 from ..decision.thresholds import CRITICAL_THRESHOLD
+from ..verification import has_controlled_verification
 from .confidence import calculate_confidence
 from .impact import calculate_impact
 from .likelihood import calculate_likelihood
@@ -57,16 +58,9 @@ def calculate_risk(finding, asset) -> None:
         finding.rationale.append("The reported attack complexity is low, increasing likelihood.")
     status = finding.vulnerability.get("status")
     provenance = finding.evidence.get("validation_provenance", {})
-    if not isinstance(provenance, dict):
-        provenance = {}
-
-    independently_verified = (
-        provenance.get("status_origin") == "ctm_verified"
-        and provenance.get("independently_verified") is True
-    )
 
     if status in ("validated", "confirmed"):
-        if independently_verified:
+        if has_controlled_verification(provenance):
             finding.rationale.append(
                 "The vulnerability has independent validation evidence."
             )

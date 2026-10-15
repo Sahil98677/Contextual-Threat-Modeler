@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -185,7 +186,7 @@ def test_vulnerability_evidence_increases_likelihood(
     ["waf", "file_validation", "av_scanning", "mfa"],
 )
 def test_each_supported_control_reduces_a_high_risk_score(control: str) -> None:
-    finding_data = {
+    finding_data: dict[str, Any] = {
         "id": "F",
         "asset_id": "A",
         "method": "POST",

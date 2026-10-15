@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import math
 from pathlib import Path
 from typing import Any
 
@@ -9,14 +10,28 @@ from .base import ScannerAdapter, ensure_adapter_path, require_list, require_map
 
 
 def _cvss_score(vuln: dict[str, Any]) -> float | None:
-    cvss = vuln.get("CVSS") or {}
+    """Return a valid CVSS v3 score, ignoring malformed optional metadata."""
+    cvss = vuln.get("CVSS")
+    if not isinstance(cvss, dict):
+        return None
+
     for vendor in ("nvd", "redhat", "ghsa"):
-        score = (cvss.get(vendor) or {}).get("V3Score")
-        if score is not None:
-            try:
-                return float(score)
-            except (TypeError, ValueError):
-                pass
+        vendor_data = cvss.get(vendor)
+        if not isinstance(vendor_data, dict):
+            continue
+
+        score = vendor_data.get("V3Score")
+        if score is None:
+            continue
+
+        try:
+            parsed_score = float(score)
+        except (OverflowError, TypeError, ValueError):
+            continue
+
+        if math.isfinite(parsed_score) and 0.0 <= parsed_score <= 10.0:
+            return parsed_score
+
     return None
 
 

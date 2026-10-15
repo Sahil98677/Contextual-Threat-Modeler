@@ -120,6 +120,55 @@ def test_trivy_adapter(tmp_path: Path):
     assert records[0]["severity"] == "HIGH"
 
 
+def test_trivy_adapter_ignores_malformed_cvss_metadata(tmp_path: Path):
+    path = tmp_path / "trivy-malformed-cvss.json"
+    path.write_text(json.dumps({
+        "Results": [{
+            "Target": "app",
+            "Vulnerabilities": [
+                {
+                    "VulnerabilityID": "CVE-2026-0001",
+                    "CVSS": "invalid",
+                },
+                {
+                    "VulnerabilityID": "CVE-2026-0002",
+                    "CVSS": {"nvd": "invalid"},
+                },
+                {
+                    "VulnerabilityID": "CVE-2026-0003",
+                    "CVSS": {"nvd": {"V3Score": "not-a-number"}},
+                },
+                {
+                    "VulnerabilityID": "CVE-2026-0004",
+                    "CVSS": {"nvd": {"V3Score": 11}},
+                },
+            ],
+        }],
+    }), encoding="utf-8")
+
+    records = TrivyAdapter().parse(path)
+
+    assert len(records) == 4
+    assert all(record["cvss_v3"] is None for record in records)
+
+
+def test_trivy_adapter_preserves_valid_cvss_score(tmp_path: Path):
+    path = tmp_path / "trivy-valid-cvss.json"
+    path.write_text(json.dumps({
+        "Results": [{
+            "Target": "app",
+            "Vulnerabilities": [{
+                "VulnerabilityID": "CVE-2026-0005",
+                "CVSS": {"nvd": {"V3Score": 9.8}},
+            }],
+        }],
+    }), encoding="utf-8")
+
+    records = TrivyAdapter().parse(path)
+
+    assert records[0]["cvss_v3"] == 9.8
+
+
 def test_qualys_csv_adapter(tmp_path: Path):
     path = tmp_path / "qualys.csv"
     path.write_text(

@@ -22,6 +22,18 @@ class VerificationAuthorizer(Protocol):
         ...
 
 
+class VerificationAuditStore(Protocol):
+    """Durable storage used as the source of truth for review history."""
+
+    def events_for(self, finding_id: str) -> list[dict[str, Any]]:
+        """Load and validate the finding's persisted review history."""
+        ...
+
+    def append_event(self, finding_id: str, event: dict[str, Any]) -> None:
+        """Atomically append an event that extends the persisted history."""
+        ...
+
+
 def _valid_timestamp(value: Any) -> bool:
     if not isinstance(value, str) or not value.strip():
         return False
@@ -83,6 +95,19 @@ def verify_audit_trail(events: Any) -> bool:
 
         if event.get("previous_event_hash") != previous_hash:
             return False
+        reviewer_id = event.get("reviewer_id")
+        evidence_reference = event.get("evidence_reference")
+        if (
+            not isinstance(reviewer_id, str)
+            or not reviewer_id.strip()
+            or not isinstance(evidence_reference, str)
+            or not evidence_reference.strip()
+            or not _valid_timestamp(event.get("verified_at"))
+            or event.get("decision") not in VALID_DECISIONS
+            or not isinstance(event.get("previous_status"), str)
+            or not isinstance(event.get("new_status"), str)
+        ):
+            return False
 
         recorded_hash = event.get("event_hash")
         if not isinstance(recorded_hash, str) or not recorded_hash:
@@ -100,10 +125,42 @@ def verify_audit_trail(events: Any) -> bool:
     return True
 
 
+def restore_verification_history(
+    finding: Finding,
+    *,
+    audit_store: VerificationAuditStore,
+) -> None:
+    """Restore verification-derived status and provenance from durable history."""
+    events = audit_store.events_for(finding.id)
+    existing_events = finding.evidence.get(AUDIT_TRAIL_KEY)
+    if existing_events is not None and existing_events != events:
+        raise ValueError("finding audit trail does not match persistent audit history")
+
+    if not events:
+        return
+
+    last_event = events[-1]
+    decision = last_event.get("decision")
+    if decision not in VALID_DECISIONS:
+        raise ValueError("persistent verification audit decision is invalid")
+
+    finding.vulnerability["status"] = last_event["new_status"]
+    finding.evidence["validation_provenance"] = {
+        "status_origin": "ctm_verified" if decision == "verified" else "ctm_reviewed",
+        "independently_verified": decision == "verified",
+        "decision": decision,
+        "reviewer_id": last_event["reviewer_id"],
+        "verified_at": last_event["verified_at"],
+        "evidence_reference": last_event["evidence_reference"],
+    }
+    finding.evidence[AUDIT_TRAIL_KEY] = events
+
+
 def record_verification(
     finding: Finding,
     *,
     authorizer: VerificationAuthorizer,
+    audit_store: VerificationAuditStore,
     evidence_reference: str,
     verified_at: str,
     decision: str,
@@ -116,8 +173,8 @@ def record_verification(
     This operation does not itself authenticate the reviewer.
     Evidence references should point to controlled records, not contain secrets.
 
-    The trail is tamper-evident, not immutable storage. Production deployments
-    should also persist events to access-controlled, append-only storage.
+    The audit store is the durable source of truth. Its database must be
+    protected by deployment-level filesystem access controls.
     """
     if not isinstance(evidence_reference, str) or not evidence_reference.strip():
         raise ValueError("evidence_reference must be a non-empty string")
@@ -144,7 +201,19 @@ def record_verification(
     if not isinstance(audit_trail, list) or not verify_audit_trail(audit_trail):
         raise ValueError("existing verification audit trail is invalid")
 
+    persisted_trail = audit_store.events_for(finding.id)
+    if audit_trail != persisted_trail:
+        raise ValueError(
+            "finding audit trail does not match persistent audit history; "
+            "restore it before recording another review"
+        )
+
     previous_status = finding.vulnerability.get("status", "discovered")
+    if persisted_trail and previous_status != persisted_trail[-1]["new_status"]:
+        raise ValueError(
+            "finding status does not match persistent audit history; "
+            "restore it before recording another review"
+        )
     new_status = status if decision == "verified" else previous_status
     previous_hash = audit_trail[-1]["event_hash"] if audit_trail else ""
 
@@ -158,6 +227,8 @@ def record_verification(
         "previous_event_hash": previous_hash,
     }
     event["event_hash"] = _event_hash(event)
+
+    audit_store.append_event(finding.id, event)
 
     if decision == "verified":
         finding.vulnerability["status"] = status

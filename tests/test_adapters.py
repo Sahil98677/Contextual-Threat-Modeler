@@ -1,6 +1,8 @@
 import json
 from pathlib import Path
 
+import pytest
+
 from adapters.base import ScannerAdapter
 from adapters.generic_json import GenericJSONAdapter
 from adapters.nessus import NessusAdapter
@@ -167,6 +169,81 @@ def test_trivy_adapter_preserves_valid_cvss_score(tmp_path: Path):
     records = TrivyAdapter().parse(path)
 
     assert records[0]["cvss_v3"] == 9.8
+
+
+@pytest.mark.parametrize(
+    "results",
+    [
+        "",
+        {},
+        "invalid",
+    ],
+)
+def test_trivy_adapter_rejects_malformed_results(tmp_path: Path, results):
+    path = tmp_path / "trivy-invalid-results.json"
+    path.write_text(
+        json.dumps({"Results": results}),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(TypeError, match="Trivy Results"):
+        TrivyAdapter().parse(path)
+
+
+@pytest.mark.parametrize("vulnerabilities", ["", {}, "invalid"])
+def test_trivy_adapter_rejects_malformed_vulnerabilities(
+    tmp_path: Path,
+    vulnerabilities,
+):
+    path = tmp_path / "trivy-invalid-vulnerabilities.json"
+    path.write_text(
+        json.dumps({
+            "Results": [{
+                "Target": "app",
+                "Vulnerabilities": vulnerabilities,
+            }],
+        }),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(TypeError, match="Trivy vulnerabilities"):
+        TrivyAdapter().parse(path)
+
+
+def test_trivy_adapter_normalizes_malformed_references(tmp_path: Path):
+    path = tmp_path / "trivy-invalid-references.json"
+    path.write_text(
+        json.dumps({
+            "Results": [{
+                "Target": "app",
+                "Vulnerabilities": [
+                    {
+                        "VulnerabilityID": "CVE-2026-0006",
+                        "References": "not-a-list",
+                    },
+                    {
+                        "VulnerabilityID": "CVE-2026-0007",
+                        "References": ["https://example.test/advisory", 42],
+                    },
+                    {
+                        "VulnerabilityID": "CVE-2026-0008",
+                        "References": [
+                            "https://example.test/valid-advisory",
+                        ],
+                    },
+                ],
+            }],
+        }),
+        encoding="utf-8",
+    )
+
+    records = TrivyAdapter().parse(path)
+
+    assert records[0]["references"] == []
+    assert records[1]["references"] == []
+    assert records[2]["references"] == [
+        "https://example.test/valid-advisory",
+    ]
 
 
 def test_qualys_csv_adapter(tmp_path: Path):

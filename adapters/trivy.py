@@ -53,12 +53,20 @@ class TrivyAdapter(ScannerAdapter):
         for index, target in enumerate(targets):
             target_record = require_mapping(target, f"Trivy result {index}")
             target_name = target_record.get("Target", "unknown")
-            vulns = target_record.get("Vulnerabilities", []) or []
+            vulns = target_record.get("Vulnerabilities", [])
             if vulns is None:
                 continue
-            vulns = require_list(vulns, f"Trivy vulnerabilities for target {target_name}")
+            vulns = require_list(
+                vulns,
+                f"Trivy vulnerabilities for target {target_name}",
+            )
             for vuln in vulns:
                 vuln_record = require_mapping(vuln, f"Trivy vulnerability for target {target_name}")
+                references = vuln_record.get("References", [])
+                if not isinstance(references, list) or not all(
+                    isinstance(reference, str) for reference in references
+                ):
+                    references = []
                 records.append({
                     "source": self.name,
                     "target": target_name,
@@ -71,6 +79,6 @@ class TrivyAdapter(ScannerAdapter):
                     "title": vuln_record.get("Title", ""),
                     "description": vuln_record.get("Description", ""),
                     "primary_url": vuln_record.get("PrimaryURL", ""),
-                    "references": vuln_record.get("References", []) or [],
+                    "references": references,
                 })
         return records

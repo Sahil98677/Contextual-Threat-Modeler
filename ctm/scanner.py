@@ -83,6 +83,14 @@ def _tags(value: Any) -> list[str]:
     ]
 
 
+def _text(value: Any, default: str) -> str:
+    """Accept non-empty strings from untrusted scanner input only."""
+    if not isinstance(value, str):
+        return default
+    normalized = value.strip()
+    return normalized if normalized else default
+
+
 def _status(record: dict[str, Any], normalized_severity: str | None = None) -> str:
     """Derive status from explicit status or canonical, source-normalized severity."""
     explicit = str(record.get("status", "")).strip().lower()
@@ -120,9 +128,11 @@ def _safe_asset_id(source: str, target: str) -> str:
 
 
 def _path(record: dict[str, Any], index: int) -> str:
-    path = record.get("path") or record.get("url")
+    path = _text(record.get("path"), "")
+    if not path:
+        path = _text(record.get("url"), "")
     if path:
-        return str(path)
+        return path
 
     if record.get("port") not in (None, ""):
         return f"{record.get('service') or 'tcp'}/{record['port']}"
@@ -225,13 +235,11 @@ def normalize_scanner_records(
             {
                 "id": f"{source_name.upper()}-{index:04d}",
                 "asset_id": asset_id,
-                "method": str(record.get("method", "GET")).upper(),
+                "method": _text(record.get("method"), "GET").upper(),
                 "path": _path(record, index),
-                "endpoint_type": str(
-                    record.get("endpoint_type")
-                    or record.get("service")
-                    or "unknown"
-                ).lower(),
+                "endpoint_type": _text(
+                    record.get("endpoint_type"), ""
+                ).lower() or _text(record.get("service"), "unknown").lower(),
                 "exposure": {
                     "internet_facing": as_optional_bool(record.get("internet_facing")),
                     "authentication_required": as_optional_bool(

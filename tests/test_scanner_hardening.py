@@ -129,6 +129,34 @@ def test_tuple_asset_tags_are_normalized():
     assert asset["tags"] == ["security", "critical"]
 
 
+def test_malformed_method_uses_get_default():
+    data = normalize_scanner_records(
+        [{"host": "api", "method": {"unexpected": "POST"}}],
+        "generic-json",
+    )
+    assert data["findings"][0]["method"] == "GET"
+
+
+def test_malformed_path_falls_back_safely():
+    data = normalize_scanner_records(
+        [{"host": "api", "path": {"unexpected": "/admin"}}],
+        "generic-json",
+    )
+    assert data["findings"][0]["path"] == "/scanner-finding/1"
+
+
+def test_malformed_endpoint_type_uses_service_fallback():
+    data = normalize_scanner_records(
+        [{
+            "host": "api",
+            "endpoint_type": ["invalid"],
+            "service": "API",
+        }],
+        "generic-json",
+    )
+    assert data["findings"][0]["endpoint_type"] == "api"
+
+
 def test_severity_is_normalized_and_status_preserved():
     data = normalize_scanner_records(
         [{"host": "api", "severity": "Moderate"}], "qualys"

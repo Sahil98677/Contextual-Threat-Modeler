@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- Added deterministic remediation priorities and conditional CWE guidance to reports.
+- Added validated SARIF 2.1.0 output and schema validation for JSON reports.
+- Added CI source/wheel builds and a clean wheel-install CLI smoke test.
+- Updated release, architecture, and threat-model documentation to reflect implemented behavior and limitations.
+
 ## 1.1.0
 
 - Added GitHub Actions CI for Python 3.10, 3.11, and 3.12.

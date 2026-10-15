@@ -35,7 +35,8 @@ Contextual Risk Score → Security Decision → Candidate Attack Paths
 - Security-control adjustment and confidence scoring
 - Risk prioritization and automated security decisions
 - Conservative attack-path correlation
-- Console, JSON, and HTML reporting
+- Prioritized remediation recommendations
+- Console, JSON, HTML, and SARIF 2.1.0 reporting
 - Historical risk snapshots and posture trends
 - Regression and end-to-end testing
 
@@ -146,6 +147,16 @@ ctm --format html --output report.html
 ```
 
 Open `report.html` in your browser to review the report.
+
+**Save a SARIF report for code-scanning integrations**
+
+```bash
+ctm --format sarif --output report.sarif
+```
+
+JSON report payloads and SARIF output are validated before they are returned.
+Reports include decision-derived P1–P4 priorities; CWE-specific remediation
+suggestions are conditional guidance, not claims that a finding is exploitable.
 
 ### 7. Analyze an existing scanner export
 
@@ -275,7 +286,9 @@ The project includes unit tests, scanner adapter tests, normalization tests, ris
 
 Synthetic fixtures are used for pipeline validation and do not represent real customer infrastructure or credentials.
 
-The CI workflow runs the test suite, Ruff, Bandit, and Mypy across Python 3.10, 3.11, and 3.12. To run the checks locally:
+The CI workflow runs the test suite, Ruff, Bandit, and Mypy across Python 3.10,
+3.11, and 3.12, then builds source and wheel distributions and smoke-tests an
+installation of the wheel in a clean environment. To run the checks locally:
 
 ```bash
 python -m pip install -e ".[dev]"
@@ -303,7 +316,8 @@ CTM is intended for internal security modeling, research, and assessment priorit
 - Scanner normalization and validation
 - End-to-end scanner testing
 - Analyst-oriented CLI
-- JSON and self-contained HTML reporting
+- Prioritized remediation guidance
+- Schema-validated JSON and SARIF 2.1.0, plus self-contained HTML reporting
 - Conservative same-asset attack-path correlation
 - Scanner-engine attack-path parity
 - Historical risk snapshots and trend comparison

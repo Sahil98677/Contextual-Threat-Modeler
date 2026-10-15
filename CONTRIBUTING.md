@@ -48,11 +48,17 @@ Run the test suite before submitting a change:
 
 ```bash
 python -m pytest
+python -m ruff check .
+python -m bandit -r ctm adapters -ll
+python -m mypy ctm adapters
 ```
 
 For changes involving scanner ingestion, normalization, scoring, decisions, reporting, or attack-path correlation, add or update regression tests for the changed behavior and relevant edge cases.
 
-The GitHub Actions workflow tests supported Python versions. Check that CI passes after opening a pull request.
+The GitHub Actions workflow tests Python 3.10, 3.11, and 3.12 and builds both
+source and wheel distributions. It installs the wheel into a clean environment
+and smoke-tests the installed CLI and SARIF output. Check that all CI jobs pass
+after opening a pull request.
 
 ## Contribution Guidelines
 

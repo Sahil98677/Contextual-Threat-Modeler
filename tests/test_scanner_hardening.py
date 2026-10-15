@@ -157,6 +157,40 @@ def test_malformed_endpoint_type_uses_service_fallback():
     assert data["findings"][0]["endpoint_type"] == "api"
 
 
+def test_malformed_title_falls_back_to_valid_plugin_name():
+    data = normalize_scanner_records(
+        [{
+            "host": "api",
+            "title": {"unexpected": "fake title"},
+            "plugin_name": "Valid plugin title",
+        }],
+        "generic-json",
+    )
+    assert (
+        data["findings"][0]["vulnerability"]["title"]
+        == "Valid plugin title"
+    )
+
+
+def test_malformed_optional_vulnerability_text_is_ignored():
+    data = normalize_scanner_records(
+        [{
+            "host": "api",
+            "cve": ["CVE-2099-1234"],
+            "description": {"unexpected": "text"},
+            "attack_complexity": ["low"],
+            "impact": {"level": "critical"},
+        }],
+        "generic-json",
+    )
+    vulnerability = data["findings"][0]["vulnerability"]
+
+    assert "cve" not in vulnerability
+    assert "description" not in vulnerability
+    assert "attack_complexity" not in vulnerability
+    assert "impact" not in vulnerability
+
+
 def test_severity_is_normalized_and_status_preserved():
     data = normalize_scanner_records(
         [{"host": "api", "severity": "Moderate"}], "qualys"

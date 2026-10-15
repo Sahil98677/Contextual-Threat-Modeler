@@ -141,15 +141,19 @@ def _path(record: dict[str, Any], index: int) -> str:
 
 
 def _title(record: dict[str, Any]) -> str:
-    return str(
-        record.get("title")
-        or record.get("plugin_name")
-        or record.get("name")
-        or record.get("vulnerability_id")
-        or record.get("qid")
-        or record.get("plugin_id")
-        or "Scanner finding"
-    )
+    """Select a usable title from untrusted scanner input."""
+    for key in (
+        "title",
+        "plugin_name",
+        "name",
+        "vulnerability_id",
+        "qid",
+        "plugin_id",
+    ):
+        value = _text(record.get(key), "")
+        if value:
+            return value
+    return "Scanner finding"
 
 
 def _vulnerability(record: dict[str, Any], source: str) -> dict[str, Any]:
@@ -157,36 +161,40 @@ def _vulnerability(record: dict[str, Any], source: str) -> dict[str, Any]:
     severity = _normalized_severity(
         record.get("severity"), source=source, risk_factor=risk_factor
     )
-    value: dict[str, Any] = {
+    result: dict[str, Any] = {
         "status": _status(record, normalized_severity=severity),
         "severity": severity,
         "title": _title(record),
     }
 
-    for key in (
+    text_fields = (
         "vulnerability_id",
         "qid",
         "plugin_id",
         "cve",
-        "cvss_v3",
-        "cvss_v2",
         "description",
         "solution",
-        "exploit_available",
+        "risk_factor",
         "attack_complexity",
         "impact",
-        "risk_factor",
-    ):
+    )
+    for key in text_fields:
+        value = _text(record.get(key), "")
+        if value:
+            if key in {"attack_complexity", "impact"}:
+                value = value.lower()
+            result[key] = value
+
+    for key in ("cvss_v3", "cvss_v2"):
         if key in record and record[key] not in (None, ""):
-            value[key] = record[key]
+            result[key] = record[key]
 
-    for key in ("impact", "attack_complexity"):
-        if isinstance(value.get(key), str):
-            value[key] = value[key].strip().lower()
-
-    if "exploit_available" in value:
-        value["exploit_available"] = _as_bool(value["exploit_available"])
-    return value
+    if "exploit_available" in record and record["exploit_available"] not in (
+        None,
+        "",
+    ):
+        result["exploit_available"] = _as_bool(record["exploit_available"])
+    return result
 
 
 def normalize_scanner_records(

@@ -249,14 +249,20 @@ Contextual factors include internet exposure, authentication requirements, DMZ p
 
 The score is a heuristic prioritization aid, not a probability of exploitation or a substitute for organization-specific risk assessment. Review and tune the model for your environment before using its scores to drive operational decisions.
 
+See the [detailed risk model documentation](docs/risk-model.md) for scoring weights, control relevance rules, confidence limitations, and decision thresholds.
+
 ### Decision Model
 
 | Risk Score | Decision |
 |---:|---|
-| ≥ 85 | `TEST_IMMEDIATELY` |
+| ≥ 85 and confidence ≥ 0.60 | `TEST_IMMEDIATELY` |
 | ≥ 70 | `PRIORITIZE_VALIDATION` |
 | ≥ 45 | `INVESTIGATE` |
 | < 45 | `MONITOR` |
+
+At scores ≥ 85 with confidence below 0.60, CTM falls through to
+`PRIORITIZE_VALIDATION`. See the detailed risk model documentation for the
+complete scoring formula and decision rules.
 
 ## Validation
 

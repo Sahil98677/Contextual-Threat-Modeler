@@ -1,4 +1,6 @@
+from ctm.models import Asset, Finding
 from ctm.scanner import normalize_scanner_records
+from ctm.scoring.risk import calculate_risk
 
 
 def test_string_false_is_not_true():
@@ -315,3 +317,95 @@ def test_valid_secret_type_is_trimmed():
     )
 
     assert data["findings"][0]["evidence"]["secret_type"] == "api_key"
+
+
+def test_non_dict_records_are_skipped_without_reindexing():
+    data = normalize_scanner_records(
+        [
+            None,
+            {"host": "api", "title": "First valid finding"},
+            "malformed record",
+            {"host": "api", "title": "Second valid finding"},
+        ],
+        "generic-json",
+    )
+
+    assert len(data["findings"]) == 2
+    assert [finding["id"] for finding in data["findings"]] == [
+        "GENERIC-JSON-0002",
+        "GENERIC-JSON-0004",
+    ]
+
+
+def test_valid_service_and_port_generate_normalized_path():
+    data = normalize_scanner_records(
+        [{"host": "api", "service": " HTTPS ", "port": "443"}],
+        "generic-json",
+    )
+
+    assert data["findings"][0]["path"] == "https/443"
+
+
+def test_invalid_port_uses_safe_fallback_path():
+    invalid_ports = (0, -1, 65536, "70000", "abc", [], {}, True, 443.5)
+
+    for port in invalid_ports:
+        data = normalize_scanner_records(
+            [{"host": "api", "service": "https", "port": port}],
+            "generic-json",
+        )
+
+        assert data["findings"][0]["path"] == "/scanner-finding/1"
+
+
+def test_malformed_service_uses_safe_default_for_valid_port():
+    data = normalize_scanner_records(
+        [{"host": "api", "service": {"name": "https"}, "port": 443}],
+        "generic-json",
+    )
+
+    assert data["findings"][0]["path"] == "tcp/443"
+
+
+def test_malformed_service_does_not_become_endpoint_type():
+    data = normalize_scanner_records(
+        [{
+            "host": "api",
+            "service": ["https"],
+            "endpoint_type": {},
+        }],
+        "generic-json",
+    )
+
+    assert data["findings"][0]["endpoint_type"] == "unknown"
+
+
+def test_raw_scanner_record_does_not_override_normalized_secret_evidence():
+    asset = Asset(id="asset-1", name="api")
+
+    def score_with_raw_record(raw_secret_exposed):
+        finding = Finding(
+            id="finding-1",
+            asset_id="asset-1",
+            method="GET",
+            path="/",
+            endpoint_type="http",
+            vulnerability={"severity": "low", "status": "discovered"},
+            evidence={
+                "secret_exposed": False,
+                "scanner_record": {
+                    "secret_exposed": raw_secret_exposed,
+                },
+            },
+        )
+        calculate_risk(finding, asset)
+        return finding
+
+    raw_claim_true = score_with_raw_record(True)
+    raw_claim_false = score_with_raw_record(False)
+
+    assert raw_claim_true.score == raw_claim_false.score
+    assert not any(
+        "secret exposure" in reason.lower()
+        for reason in raw_claim_true.rationale
+    )

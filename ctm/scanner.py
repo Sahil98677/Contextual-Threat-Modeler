@@ -91,6 +91,29 @@ def _text(value: Any, default: str) -> str:
     return normalized if normalized else default
 
 
+def _service(value: Any, default: str = "tcp") -> str:
+    """Accept only simple service identifiers from scanner input."""
+    if not isinstance(value, str):
+        return default
+    normalized = value.strip().lower()
+    if re.fullmatch(r"[a-z0-9][a-z0-9._+-]{0,63}", normalized):
+        return normalized
+    return default
+
+
+def _port(value: Any) -> int | None:
+    """Accept integer or digit-string TCP/UDP ports in the valid range."""
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, int):
+        port = value
+    elif isinstance(value, str) and re.fullmatch(r"[0-9]{1,5}", value.strip()):
+        port = int(value.strip())
+    else:
+        return None
+    return port if 1 <= port <= 65535 else None
+
+
 def _status(record: dict[str, Any], normalized_severity: str | None = None) -> str:
     """Derive status from explicit status or canonical, source-normalized severity."""
     raw_status = record.get("status")
@@ -135,8 +158,9 @@ def _path(record: dict[str, Any], index: int) -> str:
     if path:
         return path
 
-    if record.get("port") not in (None, ""):
-        return f"{record.get('service') or 'tcp'}/{record['port']}"
+    port = _port(record.get("port"))
+    if port is not None:
+        return f"{_service(record.get('service'))}/{port}"
 
     return f"/scanner-finding/{index}"
 
@@ -248,7 +272,7 @@ def normalize_scanner_records(
                 "path": _path(record, index),
                 "endpoint_type": _text(
                     record.get("endpoint_type"), ""
-                ).lower() or _text(record.get("service"), "unknown").lower(),
+                ).lower() or _service(record.get("service"), "unknown"),
                 "exposure": {
                     "internet_facing": as_optional_bool(record.get("internet_facing")),
                     "authentication_required": as_optional_bool(

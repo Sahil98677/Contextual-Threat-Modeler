@@ -246,3 +246,72 @@ def test_non_dict_controls_and_tags_are_safely_ignored():
 
     assert finding["controls"] == {}
     assert asset["tags"] == []
+
+
+def test_malformed_status_falls_back_to_severity():
+    for value in ({"status": "confirmed"}, ["confirmed"], 123):
+        data = normalize_scanner_records(
+            [{
+                "host": "api",
+                "status": value,
+                "severity": "high",
+            }],
+            "generic-json",
+        )
+
+        assert (
+            data["findings"][0]["vulnerability"]["status"]
+            == "validated"
+        )
+
+
+def test_valid_explicit_status_is_preserved():
+    data = normalize_scanner_records(
+        [{
+            "host": "api",
+            "status": " CONFIRMED ",
+            "severity": "low",
+        }],
+        "generic-json",
+    )
+
+    assert data["findings"][0]["vulnerability"]["status"] == "confirmed"
+
+
+def test_malformed_asset_owner_is_ignored():
+    for value in ({"name": "admin"}, ["admin"], 123):
+        data = normalize_scanner_records(
+            [{"host": "api", "owner": value}],
+            "generic-json",
+        )
+
+        asset = next(iter(data["assets"].values()))
+        assert asset["owner"] == ""
+
+
+def test_secret_type_accepts_only_non_empty_strings():
+    for value in ({"type": "api_key"}, ["api_key"], 123, "  "):
+        data = normalize_scanner_records(
+            [{
+                "host": "api",
+                "secret_type": value,
+                "secret_exposed": False,
+            }],
+            "generic-json",
+        )
+
+        finding = data["findings"][0]
+        assert finding["evidence"]["secret_type"] is None
+        assert finding["evidence"]["secret_exposed"] is False
+
+
+def test_valid_secret_type_is_trimmed():
+    data = normalize_scanner_records(
+        [{
+            "host": "api",
+            "secret_type": "  api_key  ",
+        }],
+        "generic-json",
+    )
+
+    assert data["findings"][0]["evidence"]["secret_type"] == "api_key"

@@ -93,7 +93,8 @@ def _text(value: Any, default: str) -> str:
 
 def _status(record: dict[str, Any], normalized_severity: str | None = None) -> str:
     """Derive status from explicit status or canonical, source-normalized severity."""
-    explicit = str(record.get("status", "")).strip().lower()
+    raw_status = record.get("status")
+    explicit = raw_status.strip().lower() if isinstance(raw_status, str) else ""
     if explicit in VALID_STATUSES:
         return explicit
 
@@ -234,7 +235,7 @@ def normalize_scanner_records(
                     record.get("data_classification", "internal")
                 ),
                 "production": _as_bool(record.get("production", True), True),
-                "owner": str(record.get("owner", "")),
+                "owner": _text(record.get("owner"), ""),
                 "tags": _tags(record.get("tags", [])),
             },
         )
@@ -271,7 +272,7 @@ def normalize_scanner_records(
                     "secret_exposed": _as_bool(
                         record.get("secret_exposed", False)
                     ),
-                    "secret_type": record.get("secret_type"),
+                    "secret_type": _text(record.get("secret_type"), "") or None,
                 },
             }
         )

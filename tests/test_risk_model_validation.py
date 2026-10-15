@@ -2,8 +2,9 @@ from typing import Any
 
 import pytest
 
-from ctm.decision.decision_engine import risk_level
+from ctm.decision.decision_engine import decide, risk_level
 from ctm.models import Asset, Finding
+from ctm.scoring.confidence import calculate_confidence
 from ctm.scoring.risk import calculate_risk
 
 
@@ -235,3 +236,40 @@ def test_synthetic_risk_ranking_matrix() -> None:
         "exploit is reported as available" in reason
         for reason in critical.rationale
     )
+
+
+@pytest.mark.parametrize(
+    ("status", "expected_confidence"),
+    [
+        ("discovered", 0.35),
+        ("suspected", 0.60),
+        ("validated", 0.80),
+        ("confirmed", 0.95),
+    ],
+)
+def test_confidence_matches_vulnerability_status(
+    status: str,
+    expected_confidence: float,
+) -> None:
+    finding = _finding(status=status)
+
+    assert calculate_confidence(finding) == expected_confidence
+
+
+@pytest.mark.parametrize(
+    ("status", "expected_decision"),
+    [
+        ("discovered", "PRIORITIZE_VALIDATION"),
+        ("suspected", "TEST_IMMEDIATELY"),
+        ("validated", "TEST_IMMEDIATELY"),
+        ("confirmed", "TEST_IMMEDIATELY"),
+    ],
+)
+def test_high_risk_decision_respects_status_confidence(
+    status: str,
+    expected_decision: str,
+) -> None:
+    finding = _finding(status=status)
+    confidence = calculate_confidence(finding)
+
+    assert decide(85.0, confidence) == expected_decision

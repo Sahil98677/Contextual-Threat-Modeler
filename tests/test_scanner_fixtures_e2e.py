@@ -11,10 +11,13 @@ FIXTURES = ROOT / "mock_inputs" / "scanner_samples"
 @pytest.mark.parametrize(
     ("scanner", "filename", "expected_count"),
     [
+        ("generic-json", "generic_sample.json", 1),
+        ("nmap", "nmap_sample.xml", 1),
         ("nuclei", "nuclei_sample.jsonl", 2),
         ("trivy", "trivy_sample.json", 1),
         ("nessus", "nessus_sample.nessus", 1),
         ("qualys-csv", "qualys_sample.csv", 1),
+        ("qualys-xml", "qualys_sample.xml", 1),
     ],
 )
 def test_synthetic_scanner_reaches_complete_ctm_pipeline(
@@ -84,6 +87,35 @@ def test_qualys_fixture_preserves_qid_and_cve():
     finding = findings[0]
     assert finding.vulnerability["qid"] == "12345"
     assert finding.vulnerability["cve"] == "CVE-2026-0003"
+
+
+def test_nmap_fixture_preserves_open_port_as_a_ctm_finding():
+    findings = run_scanner("nmap", FIXTURES / "nmap_sample.xml")
+
+    assert len(findings) == 1
+    assert findings[0].path == "https/443"
+    assert findings[0].evidence["scanner_record"]["host"] == "10.10.10.30"
+
+
+def test_qualys_xml_fixture_preserves_host_qid_and_cve():
+    findings = run_scanner("qualys-xml", FIXTURES / "qualys_sample.xml")
+
+    assert len(findings) == 1
+    finding = findings[0]
+    assert finding.evidence["scanner_record"]["host"] == "10.10.10.40"
+    assert finding.vulnerability["qid"] == "23456"
+    assert finding.vulnerability["cve"] == "CVE-2026-0011"
+
+
+def test_tagged_vulnerability_input_flows_through_generic_json_pipeline():
+    findings = run_scanner("generic-json", ROOT / "mock_inputs" / "vulnerabilities.json")
+
+    assert len(findings) == 3
+    findings_by_path = {finding.path: finding for finding in findings}
+    upload_finding = findings_by_path["/document/upload"]
+    assert upload_finding.vulnerability["cwe"] == "CWE-434"
+    assert upload_finding.vulnerability["status"] == "validated"
+    assert upload_finding.confidence <= 0.60
 
 
 @pytest.mark.parametrize(

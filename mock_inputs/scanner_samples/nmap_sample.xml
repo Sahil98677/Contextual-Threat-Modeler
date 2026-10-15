@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<nmaprun>
+  <host>
+    <address addr="10.10.10.30" addrtype="ipv4"/>
+    <hostnames>
+      <hostname name="web.example.test" type="user"/>
+    </hostnames>
+    <ports>
+      <port protocol="tcp" portid="443">
+        <state state="open"/>
+        <service name="https"/>
+      </port>
+    </ports>
+  </host>
+</nmaprun>

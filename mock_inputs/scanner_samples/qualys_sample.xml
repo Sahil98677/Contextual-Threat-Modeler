@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<ASSET_DATA_REPORT>
+  <HOST_LIST>
+    <HOST>
+      <IP>10.10.10.40</IP>
+      <VULN_LIST>
+        <VULN number="23456" severity="4" title="Example Qualys finding">
+          <CVE_ID>CVE-2026-0011</CVE_ID>
+          <CATEGORY>Web Application</CATEGORY>
+          <DIAGNOSIS>Synthetic safe fixture diagnosis.</DIAGNOSIS>
+          <SOLUTION>Apply the vendor-recommended remediation.</SOLUTION>
+        </VULN>
+      </VULN_LIST>
+    </HOST>
+  </HOST_LIST>
+</ASSET_DATA_REPORT>

@@ -20,7 +20,7 @@ production readiness.
 | M4 | Tamper-evident audit trail | Implemented in commit `7b58a9c`: hash-chained review events, status transitions, tamper detection, and rejection of invalid existing history. Local tests and quality checks passed; confirm the corresponding GitHub Actions run before treating remote CI as verified. |
 | M5 | Authenticated reviewer authorization | Authorization boundary implemented: verification requires a trusted authorizer, decision-specific permission checks, and authorizer-derived reviewer attribution. A deployment must still connect an authenticated identity provider and enforce its access policy. |
 | M6 | Persistent audit storage | Implemented with a SQLite-backed audit store, transactionally appended hash-chained events, tamper checks, update/delete guards, and explicit recovery of finding status and provenance after restart. Protect the database and its directory with deployment-level access controls. |
-| M7 | Unified scanner ingestion | Assessment and integration milestone. Connect supported adapters through the common schema and registry, normalize records into CTM assets and findings, and verify they reach the risk pipeline. |
+| M7 | Unified scanner ingestion | Implemented: all seven supported adapters are exercised through parsing, common normalization, threat enrichment, scoring, decisions, and reporting; regression tests cover safe synthetic fixtures and the repository's tagged vulnerability input. CWE metadata is preserved for downstream context and controls. Validate representative exports from each deployed scanner version before operational use. |
 | M8 | Contextual risk calibration | Planned. Strengthen and document how exposure, authentication, asset criticality, data sensitivity, exploitability, and controls affect risk; use deterministic regression tests. |
 | M9 | STRIDE and MITRE ATT&CK mapping | Planned. Improve threat and technique mapping with traceable evidence and tests. |
 | M10 | Attack-path analysis | Planned. Correlate assets, endpoints, trust relationships, controls, and findings into reproducible, evidence-backed candidate paths. |
@@ -39,9 +39,9 @@ this dependency order:
 5. **M11 — Deliver actionable decisions and reporting.**
 6. **M12 — Prepare for a reliable public release.**
 
-M7 should be addressed early: adapter availability alone does not prove that
-all supported exports flow consistently through normalization, enrichment,
-scoring, decisions, and reporting.
+M7 is covered with synthetic fixtures, but adapter availability and synthetic
+fixtures do not guarantee compatibility with every scanner version or every
+optional field. Validate representative real exports before operational use.
 
 ## Definition of done
 
@@ -67,8 +67,9 @@ Every milestone should meet these criteria before it is considered complete:
   tamper-evident, not immutable against a database owner or privileged file
   rewrite. Deployments must restrict database and directory access and maintain
   backups appropriate to their recovery requirements.
-- Scanner adapters parse scanner output; adapter availability alone does not
-  mean every output is integrated into the complete risk pipeline.
+- Scanner adapters parse scanner output and feed the shared pipeline. The
+  synthetic fixtures verify the supported formats, but scanner-version-specific
+  behavior still requires validation against representative exports.
 - Risk scores and decisions are contextual prioritization aids, not proof of
   exploitability or a guarantee of security.
 - Completion of M0–M4 does not mean CTM is production-ready.

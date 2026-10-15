@@ -183,6 +183,11 @@ Supported adapters:
 | Qualys | CSV | `qualys-csv` |
 | Nessus | `.nessus` XML | `nessus` |
 
+Each adapter's records are normalized into CTM findings and assets, then sent
+through the same contextual scoring, threat mapping, decision, and reporting
+pipeline. Synthetic end-to-end fixtures cover all seven adapter names; test
+representative exports from your scanner version before operational use.
+
 ### 8. Compare risk over time
 
 ```bash

@@ -44,7 +44,15 @@ def _host_for_vulnerability(
             value = (current.text or "").strip()
             if value:
                 return value
-            value = _attr_or_child(current, "host", "ip", "asset", "asset_id", "name")
+            value = _attr_or_child(
+                current,
+                "host",
+                "IP",
+                "ip",
+                "asset",
+                "asset_id",
+                "name",
+            )
             if value:
                 return value
         current = parents.get(current)

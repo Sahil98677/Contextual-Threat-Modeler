@@ -1,0 +1,12 @@
+{
+  "host": "api.example.test",
+  "path": "/api/search",
+  "endpoint_type": "api",
+  "severity": "high",
+  "status": "discovered",
+  "internet_facing": true,
+  "authentication_required": false,
+  "cve": "CVE-2026-0010",
+  "cwe": "CWE-89",
+  "title": "Search endpoint injection risk"
+}

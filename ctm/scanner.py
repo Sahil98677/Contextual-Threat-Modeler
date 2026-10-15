@@ -186,6 +186,7 @@ def _vulnerability(record: dict[str, Any], source: str) -> dict[str, Any]:
 
     text_fields = (
         "vulnerability_id",
+        "cwe",
         "qid",
         "plugin_id",
         "cve",

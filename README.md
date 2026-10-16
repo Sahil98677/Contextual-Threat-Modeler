@@ -1,8 +1,54 @@
 # Contextual Threat Modeler (CTM)
 
-> A context-aware security decision engine that transforms vulnerability, reconnaissance, and scanner findings into prioritized security decisions.
+<p align="center">
+  <strong>Turn scanner findings into context-aware security decisions.</strong><br>
+  Prioritize what to investigate with asset context, evidence, controls, and clear analyst-facing reports.
+</p>
+
+<p align="center">
+  <a href="https://github.com/Sahil98677/Contextual-Threat-Modeler/actions/workflows/ci.yml">
+    <img src="https://github.com/Sahil98677/Contextual-Threat-Modeler/actions/workflows/ci.yml/badge.svg?branch=main" alt="CTM CI">
+  </a>
+  <img src="https://img.shields.io/badge/Python-3.10%2B-3776AB" alt="Python 3.10 or newer">
+  <img src="https://img.shields.io/badge/License-MIT-green" alt="MIT License">
+</p>
 
 CTM does not replace vulnerability scanners. It consumes their results, adds business and security context, maps threats and attack techniques, calculates contextual risk, analyzes candidate attack paths, and helps determine what should be investigated or tested first.
+
+## Dashboard Preview
+
+Run the dashboard locally with the included synthetic examples—no scanner or hosted service required. Scanner exports are analyzed on your machine.
+
+<p align="center">
+  <img src="docs/images/dashboard-overview.png" alt="CTM dashboard overview showing finding totals, risk distribution, decisions, and candidate paths" width="49%">
+  <img src="docs/images/dashboard-attack-paths.png" alt="CTM candidate path with its heuristic priority score, unordered same-asset findings, evidence, and limitations" width="49%">
+</p>
+
+> **Analyst note:** Path-priority scores are 0–100 heuristics, not probabilities. Same-asset findings are shown as an unordered set, not a confirmed attack sequence.
+
+### Quick dashboard launch
+
+From the repository root, after installing Python 3.10 or newer:
+
+```bash
+python -m pip install -e ".[dashboard]"
+python -m streamlit run ctm_dashboard.py --server.address 127.0.0.1 --server.port 8501
+```
+
+Open [http://127.0.0.1:8501](http://127.0.0.1:8501). For virtual-environment setup on Windows, Linux, Kali Linux, and macOS, see [Getting Started](#getting-started).
+
+## Contents
+
+- [Why CTM?](#why-ctm)
+- [Core capabilities](#core-capabilities)
+- [Getting Started](#getting-started)
+- [Reports and scanner inputs](#7-generate-reports)
+- [Architecture](#architecture)
+- [Risk and decision models](#risk-model)
+- [Validation](#validation)
+- [Troubleshooting](#troubleshooting)
+- [Security boundary](#security-boundary)
+- [License](#license)
 
 ## Why CTM?
 

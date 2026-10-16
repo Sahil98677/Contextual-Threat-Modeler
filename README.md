@@ -126,7 +126,27 @@ If your terminal cannot find the `ctm` command, try:
 python ctm_cli.py
 ```
 
-### 6. Generate reports
+### 6. Open the local dashboard
+
+Install the optional dashboard dependencies in the activated virtual environment:
+
+```bash
+python -m pip install -e ".[dashboard]"
+```
+
+Start the dashboard from the repository root. It binds to loopback only and opens in your browser at `http://127.0.0.1:8501`:
+
+```bash
+python -m streamlit run ctm_dashboard.py --server.address 127.0.0.1 --server.port 8501
+```
+
+The Overview, Findings Explorer, Attack Paths, Threat Mappings, and Reports views use results from CTM's existing engine. By default, the dashboard analyzes the repository's `mock_inputs/` synthetic examples. To analyze an existing scanner export, choose **Scanner export**, select the matching adapter, upload the file, and select **Analyze scanner export**. Uploaded files are processed locally in a temporary file; the dashboard does not send them to a hosted service.
+
+The dashboard offers downloads using CTM's existing JSON, HTML, and SARIF report renderers. Risk scores and decisions are not recalculated in the UI. Attack paths are explicitly labelled candidate correlations and must not be interpreted as confirmed attack chains or proof of exploitability.
+
+To stop the local server, press `Ctrl+C` in the terminal running Streamlit. The dashboard is optional; the `ctm` CLI and its reporting commands work without installing the dashboard extra.
+
+### 7. Generate reports
 
 **Print JSON to the terminal**
 
@@ -158,7 +178,7 @@ JSON report payloads and SARIF output are validated before they are returned.
 Reports include decision-derived P1–P4 priorities; CWE-specific remediation
 suggestions are conditional guidance, not claims that a finding is exploitable.
 
-### 7. Analyze an existing scanner export
+### 8. Analyze an existing scanner export
 
 CTM analyzes existing scanner output; **it does not launch scanners or automatically exploit targets**. Choose the adapter that matches the export file.
 
@@ -199,7 +219,7 @@ through the same contextual scoring, threat mapping, decision, and reporting
 pipeline. Synthetic end-to-end fixtures cover all seven adapter names; test
 representative exports from your scanner version before operational use.
 
-### 8. Compare risk over time
+### 9. Compare risk over time
 
 ```bash
 ctm --history-dir .ctm-history
@@ -207,7 +227,7 @@ ctm --history-dir .ctm-history
 
 The first run creates a baseline. Later runs compare new results with earlier snapshots. Reuse the same history directory across assessments to compare them.
 
-### 9. Run the test suite
+### 10. Run the test suite
 
 ```bash
 python -m pip install -e ".[dev]"

@@ -20,6 +20,10 @@ dev = [
     "mypy>=1.11",
     "types-jsonschema>=4.20",
 ]
+dashboard = [
+    "streamlit>=1.49",
+    "pandas>=1.5",
+]
 
 [project.scripts]
 ctm = "ctm_cli:main"
@@ -34,7 +38,7 @@ packages = [
     "ctm.decision",
     "ctm.reporting",
 ]
-py-modules = ["ctm_cli"]
+py-modules = ["ctm_cli", "ctm_dashboard"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

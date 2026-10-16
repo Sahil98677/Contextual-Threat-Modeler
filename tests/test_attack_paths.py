@@ -77,6 +77,43 @@ def test_same_asset_findings_are_correlated():
     assert paths[0].classification == "inferred_candidate"
     assert paths[0].evidence["correlated_finding_ids"] == ["F1", "F2"]
     assert "No exploitability" in " ".join(paths[0].limitations)
+    assert paths[0].path_score == 90.0
+    assert paths[0].evidence["path_score_basis"] == {
+        "maximum_finding_score": 80,
+        "correlation_increment": 5.0,
+        "sensitive_data_increment": 5.0,
+    }
+
+
+def test_correlated_path_score_is_capped_at_100() -> None:
+    findings = [
+        Finding(
+            id=f"F{index}",
+            asset_id="A",
+            method="GET",
+            path=f"/endpoint-{index}",
+            endpoint_type="api",
+            exposure={"internet_facing": index == 1},
+            score=85 if index == 1 else 60,
+        )
+        for index in range(1, 6)
+    ]
+    asset = Asset(
+        id="A",
+        name="Portal",
+        criticality=5,
+        data_classification="restricted",
+    )
+
+    path = build_correlated_attack_paths(findings, {"A": asset})[0]
+
+    assert path.path_score == 100.0
+    assert 0.0 <= path.path_score <= 100.0
+    assert path.evidence["path_score_basis"] == {
+        "maximum_finding_score": 85,
+        "correlation_increment": 15.0,
+        "sensitive_data_increment": 5.0,
+    }
 
 
 def test_correlations_and_identifiers_are_deterministic():

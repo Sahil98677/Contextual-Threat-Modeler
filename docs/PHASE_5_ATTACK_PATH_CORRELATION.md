@@ -17,7 +17,7 @@ Related findings (unordered): F1, F2
 Asset: Portal
 ```
 
-The path carries a path ID, score, finding IDs, nodes, entry point, target, impact, correlation reason, evidence basis, and explicit limitations. IDs and ordering are deterministic for the same input set. The path score is a prioritization heuristic based on the highest finding score, a bounded same-asset correlation increment, and sensitive-data classification; it is not a probability of compromise.
+The path carries a path ID, score, finding IDs, nodes, entry point, target, impact, correlation reason, evidence basis, and explicit limitations. IDs and ordering are deterministic for the same input set. The path-priority score is on a 0–100 scale, calculated as the highest finding score plus 5 points per additional same-asset finding (capped at 15) and 5 points for confidential or restricted data, with the final score capped at 100. It is a prioritization heuristic, not a probability of compromise or successful attack.
 
 ## Reporting
 

@@ -63,6 +63,8 @@ def test_attack_path_markup_escapes_untrusted_text_and_labels_candidate() -> Non
     assert "&lt;script&gt;" in markup
     assert "target &amp; asset" in markup
     assert "inferred candidate" in markup
+    assert "Priority score 72.5 / 100" in markup
+    assert "not a probability" in markup
 
 
 def test_dashboard_does_not_change_existing_report_renderers() -> None:

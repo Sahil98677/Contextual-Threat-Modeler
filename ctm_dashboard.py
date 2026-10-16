@@ -93,9 +93,9 @@ def _path_markup(path: dict[str, Any]) -> str:
     return (
         '<div class="path-card"><div class="path-top"><strong>'
         + html.escape(str(path.get("path_id", "Candidate path")))
-        + '</strong><span class="path-score">Score '
+        + '</strong><span class="path-score">Priority score '
         + html.escape(str(path.get("path_score", "n/a")))
-        + '</span><span class="path-classification">'
+        + ' / 100 (heuristic; not a probability)</span><span class="path-classification">'
         + classification.replace("_", " ")
         + '</span></div><div class="path-nodes">'
         + "".join(node_markup)
@@ -310,6 +310,12 @@ def main() -> None:
     elif nav == "Attack paths":
         st.subheader("Attack-path visualization")
         paths = summary["attack_paths"]
+        st.caption(
+            "Path-priority score uses a 0–100 heuristic, not a probability of a "
+            "successful attack. It combines the highest finding score, +5 per "
+            "additional same-asset finding (capped at +15), and +5 for "
+            "confidential or restricted data, then caps the total at 100."
+        )
         st.warning("These are CTM candidate correlations. They do not establish exploitability, successful access, or a confirmed multi-step attack chain.")
         if not paths:
             st.info("No candidate paths were returned by the CTM engine.")
